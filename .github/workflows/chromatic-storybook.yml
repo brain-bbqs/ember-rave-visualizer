@@ -52,7 +52,7 @@ jobs:
         run: npm ci
 
       - name: Run Chromatic
-        uses: chromaui/action@v18.10.1
+        uses: chromaui/action@v18.11.0
         env:
           # Pins the footer's version string so a version bump alone does not re-snapshot every story.
           CHROMATIC_STATIC_VERSION: "true"
