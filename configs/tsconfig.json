@@ -1,0 +1,15 @@
+{
+  "extends": "@brain-bbqs/config/tsconfig.base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "../src",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "playwright.chromatic.config.ts",
+    "storybook/main.ts",
+    "storybook/preview.ts"
+  ]
+}

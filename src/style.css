@@ -1,0 +1,96 @@
+/* The shell every BBQS companion app shares comes from @brain-bbqs/ui: the theme tokens (light,
+   dark via the OS preference or the header toggle), the page defaults, the header, watermark and
+   footer bar, the shared controls, and the "What's New" modal. Set a token or knob (see that
+   package's README) on :root below to change it. The template draws its own dropzone, so it skips
+   the package's dropzone.css.
+   CSS allows @import only at the top, so every rule below follows the shared ones. */
+@import "@brain-bbqs/ui/styles/tokens.css";
+@import "@brain-bbqs/ui/styles/base.css";
+@import "@brain-bbqs/ui/styles/shell.css";
+@import "@brain-bbqs/ui/styles/controls.css";
+@import "@brain-bbqs/ui/styles/dataset-picker.css";
+@import "@brain-bbqs/ui/styles/human-subjects.css";
+@import "@brain-bbqs/ui/styles/whats-new.css";
+
+/* ------------------------------------------------------------------------------------------ */
+/* Cards */
+/* ------------------------------------------------------------------------------------------ */
+
+.card-note {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------------------------------ */
+/* The dropzone, and the summary of what it loaded */
+/* ------------------------------------------------------------------------------------------ */
+
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.dz-inner p {
+  margin: 0.5rem 0 0;
+}
+
+.dz-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* A button that reads as the link in the sentence it sits in, not as a control beside it. */
+.dz-browse {
+  font: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dz-hint {
+  font-size: 0.85rem;
+}
+
+.dz-reject {
+  color: var(--err);
+  font-weight: 600;
+}
+
+.file-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.file-summary-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.file-summary-stats {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone {
+    transition: none;
+  }
+}
