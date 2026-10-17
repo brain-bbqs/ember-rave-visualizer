@@ -1,50 +1,88 @@
-// Loaded via Vite's `?raw` import so this story always mirrors the real markup in index.html
-// instead of a hand-maintained copy that can drift out of sync.
+// Loaded as raw HTML so the stories cannot drift from the real page structure.
 import indexHtml from "../index.html?raw";
+import { withTheme } from "./utils";
 
-// Injected by configs/storybook/main.ts, the same way vite.config.ts injects it for the real app.
 declare const __APP_VERSION__: string;
 
-interface AppStoryOptions {
-  fileLoaded?: boolean;
+type AppState = "default" | "url" | "loaded";
+type Theme = "light" | "dark";
+
+function required<T extends Element>(root: ParentNode, selector: string): T {
+  const element = root.querySelector<T>(selector);
+  if (!element) throw new Error("Missing story element " + selector);
+  return element;
 }
 
-// Mirrors what main.ts renders once a file is loaded (see showLoadedFile there). Storybook runs
-// none of the app's script, so the story fills in the same elements by hand.
-function applyFileLoaded(wrapper: HTMLElement): void {
-  wrapper.querySelector("#load-card")?.setAttribute("hidden", "");
-  wrapper.querySelector("#file-card")?.removeAttribute("hidden");
-  const name = wrapper.querySelector("#file-summary-name");
-  if (name) name.textContent = "recording.mp4";
-  const stats = wrapper.querySelector("#file-summary-stats");
-  if (stats) stats.textContent = "1.5 GB · video/mp4";
+function applyFakeViewer(wrapper: HTMLElement): void {
+  required<HTMLElement>(wrapper, "#viewer-loading").hidden = true;
+  required<HTMLElement>(wrapper, "#viewer-test-placeholder").hidden = false;
+  required<HTMLIFrameElement>(wrapper, "#viewer-frame").hidden = true;
 }
 
-function buildApp({ fileLoaded = false }: AppStoryOptions = {}): HTMLElement {
+function applyUrlState(wrapper: HTMLElement): void {
+  required<HTMLElement>(wrapper, "#local-source-pane").hidden = true;
+  required<HTMLElement>(wrapper, "#url-source-pane").hidden = false;
+  required<HTMLButtonElement>(wrapper, "#source-local-btn").classList.remove("primary");
+  required<HTMLButtonElement>(wrapper, "#source-local-btn").setAttribute("aria-pressed", "false");
+  required<HTMLButtonElement>(wrapper, "#source-url-btn").classList.add("primary");
+  required<HTMLButtonElement>(wrapper, "#source-url-btn").setAttribute("aria-pressed", "true");
+}
+
+function applyLoadedState(wrapper: HTMLElement): void {
+  const status = required<HTMLElement>(wrapper, "#load-status");
+  status.hidden = false;
+  status.classList.add("success");
+  const title = document.createElement("strong");
+  title.textContent = "test-injection-mock-electrodes.csv loaded";
+  const detail = document.createElement("span");
+  detail.className = "load-status-detail";
+  detail.textContent = "2 electrodes · 7 columns · Local file";
+  status.replaceChildren(title, detail);
+  required<HTMLButtonElement>(wrapper, "#clear-electrodes-btn").hidden = false;
+}
+
+function buildApp(theme: Theme, state: AppState): HTMLElement {
   const doc = new DOMParser().parseFromString(indexHtml, "text/html");
-  // The app's own <script type="module"> wires up real behavior; Storybook only needs the static
-  // markup for a visual snapshot of each state.
-  doc.body.querySelectorAll("script").forEach((s) => s.remove());
+  doc.body.querySelectorAll("script").forEach((script) => script.remove());
   const wrapper = document.createElement("div");
   wrapper.innerHTML = doc.body.innerHTML;
-  // Mirrors the one line of main.ts that runs before anything is loaded; without it the footer's
-  // version link would render as an empty (invisible) anchor in the snapshots.
-  const version = wrapper.querySelector("#version-indicator");
-  if (version) version.textContent = `v${__APP_VERSION__}`;
-  if (fileLoaded) applyFileLoaded(wrapper);
-  return wrapper;
+  required<HTMLElement>(wrapper, "#version-indicator").textContent = "v" + __APP_VERSION__;
+  applyFakeViewer(wrapper);
+  if (state === "url") applyUrlState(wrapper);
+  if (state === "loaded") applyLoadedState(wrapper);
+  return withTheme(theme, () => wrapper);
 }
 
 export default {
   title: "App",
 };
 
-export const Default = {
-  name: "Default (nothing loaded)",
-  render: () => buildApp(),
+export const DefaultLight = {
+  name: "Default (light)",
+  render: () => buildApp("light", "default"),
 };
 
-export const FileLoaded = {
-  name: "File loaded",
-  render: () => buildApp({ fileLoaded: true }),
+export const DefaultDark = {
+  name: "Default (dark)",
+  render: () => buildApp("dark", "default"),
+};
+
+export const RemoteUrlLight = {
+  name: "Remote URL (light)",
+  render: () => buildApp("light", "url"),
+};
+
+export const RemoteUrlDark = {
+  name: "Remote URL (dark)",
+  render: () => buildApp("dark", "url"),
+};
+
+export const LoadedLight = {
+  name: "CSV loaded (light)",
+  render: () => buildApp("light", "loaded"),
+};
+
+export const LoadedDark = {
+  name: "CSV loaded (dark)",
+  render: () => buildApp("dark", "loaded"),
 };

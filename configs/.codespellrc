@@ -1,4 +1,4 @@
 [codespell]
-skip = package-lock.json,*.svg,*.png,*.jpg,*.jpeg,*.gif,*.ico,dist,node_modules
+skip = package-lock.json,*.svg,*.png,*.jpg,*.jpeg,*.gif,*.ico,dist,node_modules,public/vendor/*
 # vitest's afterAll hook reads as "after all" to codespell.
 ignore-words-list = afterall

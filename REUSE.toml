@@ -5,3 +5,21 @@ path = "**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Center for Open Neuroscience"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "LICENSES/MPL-2.0.txt"
+precedence = "override"
+SPDX-FileCopyrightText = "Mozilla Foundation and contributors"
+SPDX-License-Identifier = "MPL-2.0"
+
+[[annotations]]
+path = "public/vendor/rave/RAVE_MNI_template.html"
+precedence = "override"
+SPDX-FileCopyrightText = "RAVE and three-brain-js contributors"
+SPDX-License-Identifier = "MPL-2.0 AND LicenseRef-MNI152-Template"
+
+[[annotations]]
+path = "LICENSES/LicenseRef-MNI152-Template.txt"
+precedence = "override"
+SPDX-FileCopyrightText = "FreeSurfer and MNI152 template data contributors"
+SPDX-License-Identifier = "LicenseRef-MNI152-Template"
