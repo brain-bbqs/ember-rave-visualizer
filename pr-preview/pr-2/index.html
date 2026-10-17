@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>try {
+  var storedTheme = localStorage.getItem("ember-rave-visualizer.theme");
+  if (storedTheme === "light" || storedTheme === "dark") document.documentElement.dataset.theme = storedTheme;
+} catch (e) {}</script>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMBER RAVE Visualizer</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/app-logo-DpyVFZhq.svg" />
+    <script type="module" crossorigin src="./assets/index-kzT01TQV.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BZKGzGs5.css">
+  </head>
+  <body>
+    <a
+      class="brand-watermark-link"
+      href="https://brain-bbqs.org"
+      target="_blank"
+      rel="noopener"
+      aria-label="BBQS"
+      title="BBQS"
+    >
+      <img class="brand-watermark-logo" src="./assets/bbqs-logo-DsiqigcO.png" alt="BBQS" />
+    </a>
+
+    <main>
+      <header class="site-header">
+        <a
+          class="header-logo-link"
+          href="https://brain-bbqs.org"
+          target="_blank"
+          rel="noopener"
+          aria-label="BBQS"
+          title="BBQS"
+        >
+          <img class="header-logo" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2096%2096'%20width='96'%20height='96'%20role='img'%20aria-label='EMBER%20RAVE%20Visualizer'%3e%3c!--%20Temporary%20browser-window%20branding%20until%20the%20app%20receives%20its%20final%20mark.%20--%3e%3crect%20x='4'%20y='4'%20width='88'%20height='88'%20rx='20'%20fill='%234f46e5'%20/%3e%3crect%20x='18'%20y='24'%20width='60'%20height='48'%20rx='6'%20fill='%23ffffff'%20/%3e%3crect%20x='18'%20y='24'%20width='60'%20height='12'%20rx='6'%20fill='%23c7d2fe'%20/%3e%3crect%20x='18'%20y='30'%20width='60'%20height='6'%20fill='%23c7d2fe'%20/%3e%3ccircle%20cx='25'%20cy='30'%20r='2.2'%20fill='%234f46e5'%20/%3e%3ccircle%20cx='32'%20cy='30'%20r='2.2'%20fill='%234f46e5'%20/%3e%3ccircle%20cx='39'%20cy='30'%20r='2.2'%20fill='%234f46e5'%20/%3e%3crect%20x='26'%20y='44'%20width='30'%20height='5'%20rx='2.5'%20fill='%23818cf8'%20/%3e%3crect%20x='26'%20y='54'%20width='44'%20height='5'%20rx='2.5'%20fill='%23c7d2fe'%20/%3e%3c/svg%3e" alt="EMBER RAVE Visualizer" />
+        </a>
+        <h1>EMBER RAVE Visualizer</h1>
+        <div class="header-actions">
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-toggle"
+            aria-label="Toggle light/dark mode"
+            title="Toggle light/dark mode"
+          >
+            <svg
+              class="theme-toggle-moon"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <svg
+              class="theme-toggle-sun"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <p class="site-subtitle">
+        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain.</span>
+      </p>
+
+      <section class="card load-card" id="load-card" aria-labelledby="load-heading">
+        <div class="card-heading load-heading-row">
+          <div>
+            <h2 id="load-heading">Load electrode coordinates</h2>
+            <p class="card-note">Choose a local CSV file or fetch one from a public URL.</p>
+          </div>
+          <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
+        </div>
+
+        <div id="source-tabs" class="source-tabs" role="group" aria-label="Electrode CSV source">
+          <button type="button" id="source-local-btn" class="primary" aria-pressed="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M3 7h5l2 2h11v10H3z" />
+              <path d="M3 7V5h6l2 2" />
+            </svg>
+            Local file
+          </button>
+          <button type="button" id="source-url-btn" aria-pressed="false">
+            <svg
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" />
+              <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
+            </svg>
+            Remote URL
+          </button>
+          <button
+            type="button"
+            id="source-ember-btn"
+            aria-pressed="false"
+            disabled
+            title="EMBER sign-in and archive browsing will be added in a follow-up"
+          >
+            EMBER
+            <span class="badge upload">Coming soon</span>
+          </button>
+        </div>
+
+        <div id="local-source-pane" class="source-pane">
+          <div id="dropzone" class="dropzone">
+            <div class="dz-inner">
+              <div class="dz-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="38"
+                  height="38"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
+                >
+                  <path d="M4 3h11l5 5v13H4z" />
+                  <path d="M15 3v5h5M8 13h8M8 17h8" />
+                </svg>
+              </div>
+              <p>
+                Drop an electrode CSV here, or
+                <button type="button" id="browse-file-btn" class="dz-browse">browse for a file</button>.
+              </p>
+              <p class="dz-hint">The file is read locally and never uploaded.</p>
+              <p id="dropzone-reject" class="dz-reject" hidden></p>
+            </div>
+            <input type="file" id="file-input" accept=".csv,text/csv" hidden />
+          </div>
+        </div>
+
+        <div id="url-source-pane" class="source-pane" hidden>
+          <form id="url-form" class="url-row">
+            <label class="sr-only" for="url-input">Public electrode CSV URL</label>
+            <input
+              type="url"
+              id="url-input"
+              placeholder="https://github.com/…/blob/…/electrodes.csv"
+              autocomplete="url"
+              required
+            />
+            <button type="submit" id="load-url-btn" class="primary">Load CSV</button>
+          </form>
+          <p class="dz-hint">GitHub <code>/blob/</code> links are automatically converted to raw download URLs.</p>
+        </div>
+
+        <div id="load-status" class="load-status" role="status" aria-live="polite" hidden></div>
+      </section>
+
+      <section class="card viewer-card" id="viewer-card" aria-labelledby="viewer-heading">
+        <div class="card-heading">
+          <div>
+            <h2 id="viewer-heading">MNI152 electrode viewer</h2>
+            <p class="card-note">
+              Rotate, zoom, inspect slices, and adjust RAVE display controls in the embedded viewer.
+            </p>
+          </div>
+          <span class="badge upload">RAVE</span>
+        </div>
+        <div id="viewer-frame-shell" class="viewer-frame-shell">
+          <div id="viewer-loading" class="viewer-loading" role="status">Preparing the RAVE viewer…</div>
+          <div id="viewer-test-placeholder" class="viewer-test-placeholder" hidden>Deterministic test viewer</div>
+          <iframe
+            id="viewer-frame"
+            title="Interactive RAVE MNI152 electrode viewer"
+            src="about:blank"
+            data-src="./vendor/rave/RAVE_MNI_template.html"
+            allow="fullscreen"
+          ></iframe>
+        </div>
+        <p class="viewer-credit">
+          Viewer engine by the
+          <a href="https://rave.wiki/" target="_blank" rel="noopener">RAVE project</a> and
+          <a href="https://github.com/dipterix/three-brain-js" target="_blank" rel="noopener">three-brain-js</a>
+          contributors. See
+          <a
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/blob/main/THIRD_PARTY_NOTICES.md"
+            target="_blank"
+            rel="noopener"
+            >third-party notices</a
+          >.
+        </p>
+      </section>
+    </main>
+
+    <div class="page-footer-bar">
+      <div class="footer-left">
+        <div class="footer-row">
+          <button id="whats-new-button" class="whats-new-link" type="button">✨ What's New</button>
+        </div>
+        <div class="footer-row">
+          <a
+            class="footer-text-link"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/issues/new?template=bug_report.yml"
+            target="_blank"
+            rel="noopener"
+          >
+            🐛 Report a bug
+          </a>
+        </div>
+        <div class="footer-row">
+          <a
+            class="footer-text-link"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/issues/new?template=feature_request.yml"
+            target="_blank"
+            rel="noopener"
+          >
+            💡 Request a feature
+          </a>
+        </div>
+        <div class="footer-row">
+          <a
+            id="version-indicator"
+            class="version-link"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer"
+            target="_blank"
+            rel="noopener"
+            title="View source on GitHub"
+          ></a>
+        </div>
+      </div>
+      <div class="footer-brands">
+        <a
+          class="footer-brand-link"
+          href="https://centerforopenneuroscience.org"
+          target="_blank"
+          rel="noopener"
+          aria-label="Center for Open Neuroscience"
+          title="Center for Open Neuroscience"
+        >
+          <img class="footer-brand-logo" src="./assets/con-logo-F8_OuRqh.png" alt="Center for Open Neuroscience" />
+        </a>
+      </div>
+    </div>
+
+    <dialog id="whats-new-modal" class="whats-new-modal" aria-labelledby="whats-new-modal-title">
+      <div class="whats-new-modal-header">
+        <h2 id="whats-new-modal-title">What's New</h2>
+        <button id="whats-new-close" class="whats-new-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div id="whats-new-content" class="whats-new-content"></div>
+      <button id="whats-new-show-more" class="whats-new-show-more" type="button" hidden>Show more</button>
+    </dialog>
+
+  </body>
+</html>
