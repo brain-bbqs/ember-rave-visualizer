@@ -23,6 +23,7 @@ export function getElements() {
     loadStatus: required<HTMLDivElement>("load-status"),
     clearElectrodesBtn: required<HTMLButtonElement>("clear-electrodes-btn"),
     viewerCard: required<HTMLElement>("viewer-card"),
+    viewerFullscreenBtn: required<HTMLButtonElement>("viewer-fullscreen-btn"),
     viewerFrameShell: required<HTMLDivElement>("viewer-frame-shell"),
     viewerFrame: required<HTMLIFrameElement>("viewer-frame"),
     viewerLoading: required<HTMLDivElement>("viewer-loading"),

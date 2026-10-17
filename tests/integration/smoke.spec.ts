@@ -64,6 +64,18 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
   });
 
+  test("expands the MNI152 viewer to full screen and exits again", async ({ page }) => {
+    await page.goto("/?test&fake_viewer");
+    const fullscreenButton = page.locator("#viewer-fullscreen-btn");
+
+    await fullscreenButton.click();
+    await expect(fullscreenButton).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe("viewer-card");
+
+    await fullscreenButton.click();
+    await expect(fullscreenButton).toHaveAttribute("aria-pressed", "false");
+  });
+
   test("flips the theme and keeps it across reloads", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/?test&fake_viewer");
@@ -87,6 +99,7 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(page).toHaveURL(/#changelog$/);
     await page.locator("#whats-new-close").click();
     await expect(modal).toBeHidden();
+    await expect(page).not.toHaveURL(/#changelog$/);
 
     await page.goto("/?test&fake_viewer#changelog");
     await expect(modal).toBeVisible();

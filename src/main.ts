@@ -7,6 +7,7 @@ import { THEME_KEY } from "./lib/settings";
 import { readTestInjection, synthesizeMockCsv } from "./lib/testInjection";
 import { initDropzone } from "./ui/dropzone";
 import { getElements, getShell } from "./ui/elements";
+import { initViewerFullscreen } from "./ui/fullscreen";
 import { initSourcePicker } from "./ui/sourcePicker";
 import { renderLoadState } from "./ui/status";
 import { createViewerBridge, type ViewerPort } from "./ui/viewer";
@@ -17,6 +18,7 @@ const els = getElements();
 renderVersion(shell.versionIndicator, __APP_VERSION__);
 initWhatsNew(els.whatsNew, { changelog });
 initThemeToggle(shell.themeToggle, { storageKey: THEME_KEY });
+initViewerFullscreen(els.viewerCard, els.viewerFullscreenBtn);
 
 const injection = readTestInjection(window.location.search);
 
