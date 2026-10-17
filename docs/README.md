@@ -2,11 +2,11 @@
 
 ## Live test injections
 
-| URL                            | What it should look like                                            | Try it                                                                            |
-| ------------------------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `?test&fake_viewer`            | The default local-file picker above a labelled deterministic viewer | [Open](https://ember-rave-visualizer.brain-bbqs.org/?test&fake_viewer)            |
-| `?test&fake_viewer&source_url` | The remote-URL source pane                                          | [Open](https://ember-rave-visualizer.brain-bbqs.org/?test&fake_viewer&source_url) |
-| `?test&mock_csv`               | A fixed, valid two-electrode CSV shown as loaded                    | [Open](https://ember-rave-visualizer.brain-bbqs.org/?test&mock_csv)               |
+| URL                            | What it should look like                                            | Try it                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `?test&fake_viewer`            | The default local-file picker above a labelled deterministic viewer | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer)            |
+| `?test&fake_viewer&source_url` | The remote-URL source pane                                          | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&source_url) |
+| `?test&mock_csv`               | A fixed, valid two-electrode CSV shown as loaded                    | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&mock_csv)               |
 
 `?test` alone is a no-op.
 
@@ -22,4 +22,4 @@ npm run dev
 ```
 
 The production site is deployed from `main` to the `gh-pages` branch by `.github/workflows/deploy.yml`.
-The repository's GitHub Pages source must be configured to use that branch and the custom domain `ember-rave-visualizer.brain-bbqs.org`.
+The repository's GitHub Pages source must be configured to serve the root of that branch at `https://brain-bbqs.github.io/ember-rave-visualizer/`.

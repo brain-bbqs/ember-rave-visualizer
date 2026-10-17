@@ -40,5 +40,3 @@ jobs:
         with:
           source-dir: dist
           preview-branch: gh-pages
-          # The custom domain the gh-pages branch is served from; must match public/CNAME.
-          pages-base-url: ember-rave-visualizer.brain-bbqs.org
