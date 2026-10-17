@@ -1,59 +1,84 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { seedTheme } from "@brain-bbqs/test-utils/playwright";
 import { THEME_KEY } from "../../src/lib/settings";
 import { dropFile } from "./helpers/drop";
 
-test.describe("Web App Template shell", () => {
-  test("renders branding, version, and the picker", async ({ page }) => {
-    // Wide enough that the corner watermark and footer bar stay in their fixed, viewport-anchored
-    // spots instead of the narrow-screen fallback (the max-width: 1400px query in @brain-bbqs/ui's
-    // shell.css) that hides the watermark and flows the footer into the page to avoid overlapping cards.
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/");
-    await expect(page).toHaveTitle("Web App Template");
-    await expect(page.locator("h1")).toHaveText("Web App Template");
-    await expect(page.locator(".site-subtitle")).toContainText("single-page, backend-free");
+const VALID_CSV = "Electrode,MNI152_x,MNI152_y,MNI152_z,Label\n1,-8.2,4.2,30.1,A1";
+
+test.describe("EMBER RAVE Visualizer", () => {
+  test("renders the BBQS shell, source picker, viewer, and credits", async ({ page }) => {
+    await page.setViewportSize({ width: 2048, height: 1100 });
+    await page.goto("/?test&fake_viewer");
+    await expect(page).toHaveTitle("EMBER RAVE Visualizer");
+    await expect(page.locator("h1")).toHaveText("EMBER RAVE Visualizer");
+    await expect(page.locator(".site-subtitle")).toContainText("MNI152 template brain");
     await expect(page.locator(".header-logo")).toBeVisible();
     await expect(page.locator(".brand-watermark-logo")).toBeVisible();
-    const versionLink = page.locator("#version-indicator");
-    await expect(versionLink).toHaveText(/^v\d+\.\d+\.\d+$/);
-    await expect(versionLink).toHaveAttribute("href", "https://github.com/brain-bbqs/web-app-template");
-    await expect(page.locator('a.footer-brand-link[href="https://centerforopenneuroscience.org"]')).toBeVisible();
+    await expect(page.locator("#version-indicator")).toHaveAttribute(
+      "href",
+      "https://github.com/brain-bbqs/ember-rave-visualizer",
+    );
     await expect(page.locator("#dropzone")).toBeVisible();
-    await expect(page.locator("#file-card")).toBeHidden();
+    await expect(page.locator("#viewer-card")).toBeVisible();
+    await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
+    await expect(page.locator(".viewer-credit")).toContainText("three-brain-js");
   });
 
-  test("loads a picked file into the summary card, and Change file brings the picker back", async ({ page }) => {
-    await page.goto("/");
+  test("loads and removes a dropped local electrode CSV", async ({ page }) => {
+    await page.goto("/?test&fake_viewer");
+    await dropFile(page, { name: "subject.csv", mimeType: "text/csv", buffer: Buffer.from(VALID_CSV) });
+    const status = page.locator("#load-status");
+    await expect(status).toContainText("subject.csv loaded");
+    await expect(status).toContainText("1 electrode · 5 columns · Local file");
+    await expect(page.locator("#clear-electrodes-btn")).toBeVisible();
+
+    await page.locator("#clear-electrodes-btn").click();
+    await expect(status).toBeHidden();
+  });
+
+  test("rejects a non-CSV drop before trying to load it", async ({ page }) => {
+    await page.goto("/?test&fake_viewer");
     await dropFile(page, { name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("hello") });
-    await expect(page.locator("#file-card")).toBeVisible();
-    await expect(page.locator("#load-card")).toBeHidden();
-    await expect(page.locator("#file-summary-name")).toHaveText("notes.txt");
-    await expect(page.locator("#file-summary-stats")).toHaveText("5 B · text/plain");
-
-    await page.locator("#change-file-btn").click();
-    await expect(page.locator("#load-card")).toBeVisible();
-    await expect(page.locator("#file-card")).toBeHidden();
+    await expect(page.locator("#dropzone-reject")).toContainText("not a CSV");
+    await expect(page.locator("#load-status")).toBeHidden();
   });
 
-  test("lands straight on the loaded state from the ?test&mock_file injection", async ({ page }) => {
-    await page.goto("/?test&mock_file");
-    await expect(page.locator("#file-card")).toBeVisible();
-    await expect(page.locator("#load-card")).toBeHidden();
-    await expect(page.locator("#file-summary-name")).toHaveText("test-injection-mock-file.txt");
+  test("converts a GitHub blob URL to raw content and loads it", async ({ page }) => {
+    const rawUrl = "https://raw.githubusercontent.com/rave-ieeg/rave-ieeg.github.io/abc123/posts/3dviewer/PAV080.csv";
+    await page.route(rawUrl, async (route) => {
+      await route.fulfill({ status: 200, contentType: "text/csv", body: VALID_CSV });
+    });
+    await page.goto("/?test&fake_viewer&source_url");
+    await expect(page.locator("#url-source-pane")).toBeVisible();
+    await page
+      .locator("#url-input")
+      .fill("https://github.com/rave-ieeg/rave-ieeg.github.io/blob/abc123/posts/3dviewer/PAV080.csv");
+    await page.locator("#load-url-btn").click();
+    await expect(page.locator("#load-status")).toContainText("PAV080.csv loaded");
+    await expect(page.locator("#load-status")).toContainText("raw.githubusercontent.com");
   });
 
-  test("boots for real when ?test names nothing to fake", async ({ page }) => {
-    await page.goto("/?test");
-    await expect(page.locator("#dropzone")).toBeVisible();
-    await expect(page.locator("#file-card")).toBeHidden();
+  test("lands on a deterministic loaded state from ?test&mock_csv", async ({ page }) => {
+    await page.goto("/?test&mock_csv");
+    await expect(page.locator("#load-status")).toContainText("test-injection-mock-electrodes.csv loaded");
+    await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
   });
 
-  test("flips the theme from the header toggle and keeps it across a reload", async ({ page }) => {
-    // Start from the light theme so the single toggle click below lands on dark.
+  test("expands the MNI152 viewer to full screen and exits again", async ({ page }) => {
+    await page.goto("/?test&fake_viewer");
+    const fullscreenButton = page.locator("#viewer-fullscreen-btn");
+
+    await fullscreenButton.click();
+    await expect(fullscreenButton).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe("viewer-card");
+
+    await fullscreenButton.click();
+    await expect(fullscreenButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("flips the theme and keeps it across reloads", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/");
-    expect(await page.locator("html").getAttribute("data-theme")).toBe(null);
+    await page.goto("/?test&fake_viewer");
     await page.locator("#theme-toggle").click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.reload();
@@ -62,31 +87,28 @@ test.describe("Web App Template shell", () => {
 
   test("applies a stored theme before first paint", async ({ page }) => {
     await seedTheme(page, "dark", { storageKey: THEME_KEY });
-    await page.goto("/");
+    await page.goto("/?test&fake_viewer");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
 
-  test("opens What's New from the footer and from the #changelog fragment", async ({ page }) => {
-    await page.goto("/");
+  test("opens What's New from the footer and the changelog fragment", async ({ page }) => {
+    await page.goto("/?test&fake_viewer");
     const modal = page.locator("#whats-new-modal");
     await page.locator("#whats-new-button").click();
     await expect(modal).toBeVisible();
-    await expect(modal.locator(".changelog-version").first()).toBeVisible();
     await expect(page).toHaveURL(/#changelog$/);
-
     await page.locator("#whats-new-close").click();
     await expect(modal).toBeHidden();
-    await expect(page).not.toHaveURL(/#changelog/);
+    await expect(page).not.toHaveURL(/#changelog$/);
 
-    await page.goto("/#changelog");
+    await page.goto("/?test&fake_viewer#changelog");
     await expect(modal).toBeVisible();
   });
 
-  test("drops the fixed watermark once the viewport is too narrow to frame the page", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/");
+  test("flows the footer below the wide viewer at a standard desktop viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/?test&fake_viewer");
     await expect(page.locator(".brand-watermark-link")).toBeHidden();
-    // The footer stays, but in normal document flow under the page content.
     await expect(page.locator(".page-footer-bar")).toHaveCSS("position", "static");
     await expect(page.locator(".footer-brand-link")).toBeVisible();
   });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Web App Template</title>
+    <title>EMBER RAVE Visualizer</title>
     <link rel="icon" type="image/svg+xml" href="/src/assets/app-logo.svg" />
   </head>
   <body>
@@ -28,9 +28,9 @@
           aria-label="BBQS"
           title="BBQS"
         >
-          <img class="header-logo" src="/src/assets/app-logo.svg" alt="Web App Template" />
+          <img class="header-logo" src="/src/assets/app-logo.svg" alt="EMBER RAVE Visualizer" />
         </a>
-        <h1>Web App Template</h1>
+        <h1>EMBER RAVE Visualizer</h1>
         <div class="header-actions">
           <button
             type="button"
@@ -80,37 +80,181 @@
       </header>
 
       <p class="site-subtitle">
-        <span>A single-page, backend-free web app, ready to be made into something</span>
+        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain.</span>
       </p>
 
-      <!-- The one card every sibling app opens with: something to load. The setup skill replaces or
-           extends what happens once a file is here. -->
-      <section class="card" id="load-card">
-        <div id="dropzone" class="dropzone">
-          <div class="dz-inner">
-            <div class="dz-icon"><span>📄</span></div>
-            <p>
-              Drop a file here, or
-              <button type="button" id="browse-file-btn" class="dz-browse">browse for a file</button>.
-            </p>
-            <p class="dz-hint">Nothing leaves your browser: the file is read locally and never uploaded.</p>
-            <p id="dropzone-reject" class="dz-reject" hidden></p>
+      <section class="card load-card" id="load-card" aria-labelledby="load-heading">
+        <div class="card-heading load-heading-row">
+          <div>
+            <h2 id="load-heading">Load electrode coordinates</h2>
+            <p class="card-note">Choose a local CSV file or fetch one from a public URL.</p>
           </div>
-          <input type="file" id="file-input" hidden />
+          <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
         </div>
+
+        <div id="source-tabs" class="source-tabs" role="group" aria-label="Electrode CSV source">
+          <button type="button" id="source-local-btn" class="primary" aria-pressed="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M3 7h5l2 2h11v10H3z" />
+              <path d="M3 7V5h6l2 2" />
+            </svg>
+            Local file
+          </button>
+          <button type="button" id="source-url-btn" aria-pressed="false">
+            <svg
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" />
+              <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
+            </svg>
+            Remote URL
+          </button>
+          <button
+            type="button"
+            id="source-ember-btn"
+            aria-pressed="false"
+            disabled
+            title="EMBER sign-in and archive browsing will be added in a follow-up"
+          >
+            EMBER
+            <span class="badge upload">Coming soon</span>
+          </button>
+        </div>
+
+        <div id="local-source-pane" class="source-pane">
+          <div id="dropzone" class="dropzone">
+            <div class="dz-inner">
+              <div class="dz-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="38"
+                  height="38"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
+                >
+                  <path d="M4 3h11l5 5v13H4z" />
+                  <path d="M15 3v5h5M8 13h8M8 17h8" />
+                </svg>
+              </div>
+              <p>
+                Drop an electrode CSV here, or
+                <button type="button" id="browse-file-btn" class="dz-browse">browse for a file</button>.
+              </p>
+              <p class="dz-hint">The file is read locally and never uploaded.</p>
+              <p id="dropzone-reject" class="dz-reject" hidden></p>
+            </div>
+            <input type="file" id="file-input" accept=".csv,text/csv" hidden />
+          </div>
+        </div>
+
+        <div id="url-source-pane" class="source-pane" hidden>
+          <form id="url-form" class="url-row">
+            <label class="sr-only" for="url-input">Public electrode CSV URL</label>
+            <input
+              type="url"
+              id="url-input"
+              placeholder="https://github.com/…/blob/…/electrodes.csv"
+              autocomplete="url"
+              required
+            />
+            <button type="submit" id="load-url-btn" class="primary">Load CSV</button>
+          </form>
+          <p class="dz-hint">GitHub <code>/blob/</code> links are automatically converted to raw download URLs.</p>
+        </div>
+
+        <div id="load-status" class="load-status" role="status" aria-live="polite" hidden></div>
       </section>
 
-      <section class="card" id="file-card" hidden>
+      <section class="card viewer-card" id="viewer-card" aria-labelledby="viewer-heading">
         <div class="card-heading">
-          <h2>Loaded file</h2>
-          <button type="button" id="change-file-btn">Change file</button>
+          <div>
+            <h2 id="viewer-heading">MNI152 electrode viewer</h2>
+            <p class="card-note">
+              Rotate, zoom, inspect slices, and adjust RAVE display controls in the embedded viewer.
+            </p>
+          </div>
+          <div class="viewer-heading-actions">
+            <span class="badge upload">RAVE</span>
+            <button
+              type="button"
+              id="viewer-fullscreen-btn"
+              class="small ghost viewer-fullscreen-btn"
+              aria-label="View MNI152 viewer full screen"
+              aria-pressed="false"
+              title="View MNI152 viewer full screen"
+            >
+              <svg
+                class="viewer-fullscreen-enter-icon"
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+              </svg>
+              <svg
+                class="viewer-fullscreen-exit-icon"
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5" />
+              </svg>
+              <span class="viewer-fullscreen-enter-label">Full screen</span>
+              <span class="viewer-fullscreen-exit-label">Exit full screen</span>
+            </button>
+          </div>
         </div>
-        <div class="file-summary">
-          <span aria-hidden="true">📄</span>
-          <span id="file-summary-name" class="file-summary-name"></span>
-          <span id="file-summary-stats" class="file-summary-stats"></span>
+        <div id="viewer-frame-shell" class="viewer-frame-shell">
+          <div id="viewer-loading" class="viewer-loading" role="status">Preparing the RAVE viewer…</div>
+          <div id="viewer-test-placeholder" class="viewer-test-placeholder" hidden>Deterministic test viewer</div>
+          <iframe
+            id="viewer-frame"
+            title="Interactive RAVE MNI152 electrode viewer"
+            src="about:blank"
+            data-src="./vendor/rave/RAVE_MNI_template.html"
+            allow="fullscreen"
+          ></iframe>
         </div>
-        <p class="card-note">This is where the app's own work on the loaded file begins.</p>
+        <p class="viewer-credit">
+          Viewer engine by the
+          <a href="https://rave.wiki/" target="_blank" rel="noopener">RAVE project</a> and
+          <a href="https://github.com/dipterix/three-brain-js" target="_blank" rel="noopener">three-brain-js</a>
+          contributors. See
+          <a
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/blob/main/THIRD_PARTY_NOTICES.md"
+            target="_blank"
+            rel="noopener"
+            >third-party notices</a
+          >.
+        </p>
       </section>
     </main>
 
@@ -122,7 +266,7 @@
         <div class="footer-row">
           <a
             class="footer-text-link"
-            href="https://github.com/brain-bbqs/web-app-template/issues/new?template=bug_report.yml"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/issues/new?template=bug_report.yml"
             target="_blank"
             rel="noopener"
           >
@@ -132,7 +276,7 @@
         <div class="footer-row">
           <a
             class="footer-text-link"
-            href="https://github.com/brain-bbqs/web-app-template/issues/new?template=feature_request.yml"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/issues/new?template=feature_request.yml"
             target="_blank"
             rel="noopener"
           >
@@ -140,11 +284,10 @@
           </a>
         </div>
         <div class="footer-row">
-          <!-- Text is filled in from __APP_VERSION__ by src/main.ts. -->
           <a
             id="version-indicator"
             class="version-link"
-            href="https://github.com/brain-bbqs/web-app-template"
+            href="https://github.com/brain-bbqs/ember-rave-visualizer"
             target="_blank"
             rel="noopener"
             title="View source on GitHub"
