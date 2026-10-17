@@ -2,7 +2,7 @@ import { withCard, withTheme } from "./utils";
 
 type DropzoneState = "idle" | "dragover" | "rejected";
 
-// Kept in sync with the dropzone markup in index.html and the refusal text in src/ui/dropzone.ts.
+// Kept in sync with the electrode CSV dropzone and refusal text.
 function buildDropzone(state: DropzoneState): HTMLElement {
   const dz = document.createElement("div");
   dz.id = "dropzone";
@@ -10,14 +10,20 @@ function buildDropzone(state: DropzoneState): HTMLElement {
   if (state === "dragover") dz.classList.add("dragover");
   dz.innerHTML = `
     <div class="dz-inner">
-      <div class="dz-icon"><span>📄</span></div>
+      <div class="dz-icon">
+        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
+          stroke-width="1.7" aria-hidden="true">
+          <path d="M4 3h11l5 5v13H4z" />
+          <path d="M15 3v5h5M8 13h8M8 17h8" />
+        </svg>
+      </div>
       <p>
-        Drop a file here, or
+        Drop an electrode CSV here, or
         <button type="button" class="dz-browse">browse for a file</button>.
       </p>
-      <p class="dz-hint">Nothing leaves your browser: the file is read locally and never uploaded.</p>
+      <p class="dz-hint">The file is read locally and never uploaded.</p>
       <p class="dz-reject" ${state === "rejected" ? "" : "hidden"}>
-        That wasn't a file.<br /><br />Drop a single file, or use the browse button instead.
+        That file is not a CSV.<br /><br />Choose a file whose name ends in .csv.
       </p>
     </div>
   `;
@@ -49,11 +55,11 @@ export const DragOverDark = {
 };
 
 export const RejectedLight = {
-  name: "Not a file rejected (light)",
+  name: "Non-CSV rejected (light)",
   render: () => withTheme("light", () => buildDropzone("rejected")),
 };
 
 export const RejectedDark = {
-  name: "Not a file rejected (dark)",
+  name: "Non-CSV rejected (dark)",
   render: () => withTheme("dark", () => buildDropzone("rejected")),
 };

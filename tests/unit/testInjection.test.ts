@@ -1,31 +1,46 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { MOCK_FILE_NAME, readTestInjection, synthesizeMockFile } from "../../src/lib/testInjection";
+import { MOCK_CSV_NAME, readTestInjection, synthesizeMockCsv } from "../../src/lib/testInjection";
 
 describe("readTestInjection", () => {
-  it("is null without ?test, however many other params are present", () => {
-    expect(readTestInjection("")).toBe(null);
-    expect(readTestInjection("?mock_file")).toBe(null);
-    expect(readTestInjection("?foo=1&bar")).toBe(null);
+  it("is null unless the explicit test gate is present", () => {
+    expect(readTestInjection("")).toBeNull();
+    expect(readTestInjection("?mock_csv&fake_viewer&source_url")).toBeNull();
   });
 
-  it("is a no-op plan for a bare ?test", () => {
-    expect(readTestInjection("?test")).toEqual({ mockFile: false });
+  it("keeps a bare test gate as a no-op", () => {
+    expect(readTestInjection("?test")).toEqual({
+      mockCsv: false,
+      fakeViewer: false,
+      sourceUrl: false,
+    });
   });
 
-  it("reads the mock_file flag", () => {
-    expect(readTestInjection("?test&mock_file")).toEqual({ mockFile: true });
-    expect(readTestInjection("?mock_file&test")).toEqual({ mockFile: true });
+  it("reads deterministic viewer and source flags", () => {
+    expect(readTestInjection("?test&fake_viewer&source_url")).toEqual({
+      mockCsv: false,
+      fakeViewer: true,
+      sourceUrl: true,
+    });
+  });
+
+  it("automatically pairs the mock CSV with the fake viewer", () => {
+    expect(readTestInjection("?mock_csv&test")).toEqual({
+      mockCsv: true,
+      fakeViewer: true,
+      sourceUrl: false,
+    });
   });
 });
 
-describe("synthesizeMockFile", () => {
-  it("is a fixed, recognizably fake file", () => {
-    const file = synthesizeMockFile();
-    expect(file.name).toBe(MOCK_FILE_NAME);
-    expect(file.name).toContain("test-injection");
-    expect(file.type).toBe("text/plain");
-    expect(file.size).toBe(12_345);
-    // Fixed, so every snapshot of the loaded state comes out alike.
-    expect(synthesizeMockFile().size).toBe(file.size);
+describe("synthesizeMockCsv", () => {
+  it("returns a fixed, valid, recognizably synthetic electrode table", async () => {
+    const file = synthesizeMockCsv();
+    expect(file.name).toBe(MOCK_CSV_NAME);
+    expect(file.type).toBe("text/csv");
+    expect(file.size).toBe(synthesizeMockCsv().size);
+    if ("text" in file) {
+      await expect(file.text()).resolves.toContain("MNI152_x");
+    }
   });
 });

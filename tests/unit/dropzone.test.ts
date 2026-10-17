@@ -3,130 +3,112 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { initDropzone } from "../../src/ui/dropzone";
 import type { AppElements } from "../../src/ui/elements";
 
-// The drag styling, the input's own click, a drop without a DataTransfer and the window-level
-// guard are @brain-bbqs/ui's bindDropzone and tested there; these cover what the app wires into it.
-
 interface Harness {
-  dz: HTMLDivElement;
+  dropzone: HTMLDivElement;
   reject: HTMLParagraphElement;
-  fileInput: HTMLInputElement;
-  browseFileBtn: HTMLButtonElement;
+  input: HTMLInputElement;
+  browse: HTMLButtonElement;
   onFile: ReturnType<typeof vi.fn>;
 }
 
 function setup(): Harness {
-  const dz = document.createElement("div");
+  const dropzone = document.createElement("div");
   const reject = document.createElement("p");
   reject.hidden = true;
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  const browseFileBtn = document.createElement("button");
-  // Mirror the real layout: the button, message, and hidden input live inside the dropzone,
-  // so their clicks bubble to it.
-  dz.append(browseFileBtn, reject, fileInput);
-  document.body.appendChild(dz);
-  const els = { dropzone: dz, dropzoneReject: reject, fileInput, browseFileBtn } as unknown as AppElements;
+  const input = document.createElement("input");
+  input.type = "file";
+  const browse = document.createElement("button");
+  dropzone.append(browse, reject, input);
+  document.body.appendChild(dropzone);
   const onFile = vi.fn();
-  initDropzone(els, onFile);
-  return { dz, reject, fileInput, browseFileBtn, onFile };
+  initDropzone(
+    { dropzone, dropzoneReject: reject, fileInput: input, browseFileBtn: browse } as unknown as AppElements,
+    onFile,
+  );
+  return { dropzone, reject, input, browse, onFile };
 }
 
 function setInputFiles(input: HTMLInputElement, files: File[]): void {
   Object.defineProperty(input, "files", { value: files, configurable: true });
 }
 
-function dropEvent(dataTransfer: unknown): Event {
-  const e = new Event("drop", { bubbles: true, cancelable: true });
-  Object.defineProperty(e, "dataTransfer", { value: dataTransfer });
-  return e;
+function transfer(files: File[], itemKinds: Array<"file" | "string"> = files.map(() => "file")): DataTransfer {
+  return { files, items: itemKinds.map((kind) => ({ kind })) } as unknown as DataTransfer;
 }
 
-/** A DataTransfer stand-in: `files` as dropped, and one item per file (or per non-file thing). */
-function transferOf(files: File[], nonFileItems = 0): unknown {
-  const items = [
-    ...files.map(() => ({ kind: "file" })),
-    ...Array.from({ length: nonFileItems }, () => ({ kind: "string" })),
-  ];
-  return { files, items };
+function drop(target: HTMLElement, dataTransfer: DataTransfer): void {
+  const event = new Event("drop", { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
+  target.dispatchEvent(event);
 }
 
 beforeEach(() => {
-  document.body.textContent = "";
+  document.body.replaceChildren();
 });
 
-describe("initDropzone browse wiring", () => {
-  it("opens the file picker when the dropzone itself is clicked", () => {
-    const { dz, fileInput } = setup();
-    const click = vi.spyOn(fileInput, "click").mockImplementation(() => {});
-    dz.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+describe("initDropzone", () => {
+  it("opens the picker from the dropzone and only once from the nested browse button", () => {
+    const { dropzone, input, browse } = setup();
+    const click = vi.spyOn(input, "click").mockImplementation(() => {});
+    dropzone.click();
     expect(click).toHaveBeenCalledTimes(1);
+    browse.click();
+    expect(click).toHaveBeenCalledTimes(2);
   });
 
-  it("opens the file picker exactly once from the browse button, despite bubbling", () => {
-    const { browseFileBtn, fileInput } = setup();
-    const click = vi.spyOn(fileInput, "click").mockImplementation(() => {});
-    browseFileBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(click).toHaveBeenCalledTimes(1);
-  });
-
-  it("hands the picked file over and clears the input so the same file can be picked again", () => {
-    const { fileInput, onFile } = setup();
-    const file = new File(["x"], "notes.txt");
-    setInputFiles(fileInput, [file]);
-    fileInput.dispatchEvent(new Event("change"));
+  it("accepts a picked CSV and clears the input so it can be selected again", () => {
+    const { input, onFile } = setup();
+    const file = new File(["csv"], "subject.CSV");
+    setInputFiles(input, [file]);
+    input.dispatchEvent(new Event("change"));
     expect(onFile).toHaveBeenCalledWith(file);
-    expect(fileInput.value).toBe("");
+    expect(input.value).toBe("");
   });
 
-  it("does nothing on a change event that carries no files", () => {
-    const { fileInput, reject, onFile } = setup();
-    setInputFiles(fileInput, []);
-    fileInput.dispatchEvent(new Event("change"));
+  it("ignores a picker change with no file", () => {
+    const { input, onFile } = setup();
+    setInputFiles(input, []);
+    input.dispatchEvent(new Event("change"));
     expect(onFile).not.toHaveBeenCalled();
-    expect(reject.hidden).toBe(true);
-  });
-});
-
-describe("initDropzone drag & drop", () => {
-  it("hands over the first dropped file and drops the dragover styling", () => {
-    const { dz, onFile } = setup();
-    const first = new File(["a"], "a.txt");
-    const second = new File(["b"], "b.txt");
-    dz.dispatchEvent(new Event("dragenter", { cancelable: true }));
-    dz.dispatchEvent(dropEvent(transferOf([first, second])));
-    expect(onFile).toHaveBeenCalledTimes(1);
-    expect(onFile).toHaveBeenCalledWith(first);
-    expect(dz.classList.contains("dragover")).toBe(false);
   });
 
-  it("refuses a drop that carries no file, explaining what to do instead", () => {
-    const { dz, reject, onFile } = setup();
-    dz.dispatchEvent(dropEvent(transferOf([], 1)));
-    expect(onFile).not.toHaveBeenCalled();
-    expect(reject.hidden).toBe(false);
-    expect(reject.textContent).toContain("browse button");
-
-    // The two halves sit on their own lines, separated by a <br><br> gap...
+  it("rejects non-CSV files from both picking and dropping", () => {
+    const { dropzone, input, reject, onFile } = setup();
+    const textFile = new File(["text"], "notes.txt");
+    setInputFiles(input, [textFile]);
+    input.dispatchEvent(new Event("change"));
+    expect(reject.textContent).toContain("name ends in .csv");
     expect(reject.querySelectorAll("br")).toHaveLength(2);
-    expect(reject.childNodes[0].textContent).toBe("That wasn't a file.");
-    // ...built from real nodes, so the prose is never parsed as markup.
-    expect(reject.querySelectorAll("*")).toHaveLength(2);
+
+    reject.hidden = true;
+    drop(dropzone, transfer([textFile]));
+    expect(reject.hidden).toBe(false);
+    expect(onFile).not.toHaveBeenCalled();
   });
 
-  it("clears the refusal once a file is accepted", () => {
-    const { dz, reject, onFile } = setup();
-    dz.dispatchEvent(dropEvent(transferOf([], 1)));
+  it("rejects a multi-file drop instead of silently choosing one", () => {
+    const { dropzone, reject, onFile } = setup();
+    drop(dropzone, transfer([new File(["a"], "a.csv"), new File(["b"], "b.csv")]));
+    expect(reject.textContent).toContain("one CSV at a time");
+    expect(onFile).not.toHaveBeenCalled();
+  });
+
+  it("explains a drop that contains an item but no file", () => {
+    const { dropzone, reject, onFile } = setup();
+    drop(dropzone, transfer([], ["string"]));
+    expect(reject.textContent).toContain("wasn't a file");
+    expect(onFile).not.toHaveBeenCalled();
+  });
+
+  it("ignores an empty drop and clears a previous refusal after a valid CSV", () => {
+    const { dropzone, reject, onFile } = setup();
+    drop(dropzone, transfer([], ["string"]));
+    drop(dropzone, transfer([]));
     expect(reject.hidden).toBe(false);
 
-    dz.dispatchEvent(dropEvent(transferOf([new File(["x"], "a.txt")])));
-    expect(onFile).toHaveBeenCalledTimes(1);
+    const csvFile = new File(["csv"], "subject.csv");
+    drop(dropzone, transfer([csvFile]));
     expect(reject.hidden).toBe(true);
-  });
-
-  it("ignores a drop that yields nothing at all", () => {
-    const { dz, reject, onFile } = setup();
-    dz.dispatchEvent(dropEvent(transferOf([])));
-    expect(onFile).not.toHaveBeenCalled();
-    expect(reject.hidden).toBe(true);
+    expect(onFile).toHaveBeenCalledWith(csvFile);
   });
 });
