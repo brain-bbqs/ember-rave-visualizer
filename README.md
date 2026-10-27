@@ -14,7 +14,17 @@
 
 Visualize local or remotely hosted electrode-coordinate CSV files on an interactive RAVE MNI152 template brain.
 
-The app expects the case-sensitive columns `Electrode`, `MNI152_x`, `MNI152_y`, `MNI152_z`, and `Label`.
+Each row of the CSV is one electrode contact, with its MNI152 coordinates in millimetres.
+The column names are case-sensitive, and extra columns are allowed:
+
+| Electrode | MNI152_x | MNI152_y | MNI152_z | Label |
+| --------: | -------: | -------: | -------: | ----- |
+|         1 |      -22 |       -5 |      -18 | LA1   |
+|         2 |      -27 |       -5 |      -18 | LA2   |
+|         3 |      -32 |       -5 |      -18 | LA3   |
+|         4 |      -28 |      -22 |      -13 | LH1   |
+
+[Download example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.csv) to try the app with nine contacts in the left amygdala and both hippocampi, or paste that link into the app's **Remote URL** tab.
 
 ---
 
