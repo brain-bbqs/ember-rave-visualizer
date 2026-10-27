@@ -66,13 +66,41 @@ export const DERIVED_CONFIG_PREFIX = "ember-";
 
 export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.json) -->`;
 
+// The engine evaluates this once its data has loaded, with `app` and `canvas` in scope. Besides
+// handing the app to the parent page, it collapses the control panel's sections and offsets the
+// main camera's view so the brain sits centred in the part of the canvas the slice panels leave
+// uncovered; a view offset shifts the image without moving the point the brain rotates about.
+export const VIEWER_ADAPTER = `window.raveViewerApp = app;
+app.controllerGUI.getController('Dragdrop Uploader').hide();
+app.controllerGUI.folders.forEach((folder) => folder.close());
+if (!canvas.emberCentred) {
+  canvas.emberCentred = true;
+  const centre = () => {
+    const area = canvas.main_canvas;
+    if (!area.clientWidth || !area.clientHeight) return;
+    const shift = canvas.sideCanvasEnabled ? canvas.side_width / 2 : 0;
+    canvas.mainCamera.setViewOffset(area.clientWidth, area.clientHeight, -shift, 0, area.clientWidth, area.clientHeight);
+    canvas.needsUpdate = true;
+  };
+  for (const name of ['enableSideCanvas', 'disableSideCanvas']) {
+    const original = canvas[name].bind(canvas);
+    canvas[name] = (...args) => {
+      const result = original(...args);
+      centre();
+      return result;
+    };
+  }
+  new ResizeObserver(centre).observe(canvas.main_canvas);
+  centre();
+}
+window.parent.postMessage({ type: 'ember-rave-viewer-ready' }, window.location.origin);`;
+
 export const DISTRIBUTED_SETTINGS: Readonly<Record<string, unknown>> = {
   cache_folder: DATA_FOLDER,
   // No worker matching this engine build ships with the viewer, so keep every load on the fetch
   // path the decompression shim covers instead of failing over from a missing worker per file.
   worker_script: null,
-  custom_javascript:
-    "window.raveViewerApp = app; app.controllerGUI.getController('Dragdrop Uploader').hide(); window.parent.postMessage({ type: 'ember-rave-viewer-ready' }, window.location.origin);",
+  custom_javascript: VIEWER_ADAPTER,
 };
 
 // The engine requests the export's own file names; this shim maps each request under the data

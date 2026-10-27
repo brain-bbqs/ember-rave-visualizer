@@ -15,7 +15,7 @@ The full terms are in [`LICENSES/MPL-2.0.txt`](LICENSES/MPL-2.0.txt), and the ma
 The engine bundle itself is unchanged.
 This app changes four of the generated widget's settings and adds one short script to the page:
 
-- `custom_javascript` holds an adapter that exposes the initialized viewer, hides the engine's original upload control, and announces readiness to the parent page.
+- `custom_javascript` holds an adapter that exposes the initialized viewer, hides the engine's original upload control, collapses the control panel's sections, offsets the main view so the brain is centred beside the slice panels, and announces readiness to the parent page.
 - `cache_folder` points the engine at `data/` instead of the copies embedded in the page.
 - `worker_script` is `null`, because no worker matching this engine build ships with the viewer.
 - `data_filename` points at `ember-config_….json`, a copy of the export's config without the dropped surfaces; the original config ships unchanged beside it.

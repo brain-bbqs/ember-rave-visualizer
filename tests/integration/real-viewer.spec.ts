@@ -5,6 +5,11 @@ import { dropFile } from "./helpers/drop";
 
 const EXAMPLE_TABLE = resolve(process.cwd(), "public/examples/example-electrodes.tsv");
 
+interface RaveLayout {
+  controllerGUI: { folders: { _closed: boolean }[] };
+  canvas: { side_width: number; mainCamera: { view: { offsetX: number } | null } };
+}
+
 test("loads the real RAVE viewer from its data folder and plots the README example as TSV and CSV", async ({
   page,
 }) => {
@@ -19,6 +24,20 @@ test("loads the real RAVE viewer from its data folder and plots the README examp
 
   await page.goto("/");
   await expect(page.locator("#viewer-loading")).toBeHidden({ timeout: 150_000 });
+
+  const layout = await page
+    .frameLocator("#viewer-frame")
+    .locator("body")
+    .evaluate(() => {
+      const viewer = (window as unknown as { raveViewerApp: RaveLayout }).raveViewerApp;
+      return {
+        sectionsClosed: viewer.controllerGUI.folders.every((folder) => folder._closed),
+        viewShift: viewer.canvas.mainCamera.view?.offsetX,
+        halfSidePanel: viewer.canvas.side_width / 2,
+      };
+    });
+  expect(layout.sectionsClosed).toBe(true);
+  expect(layout.viewShift).toBe(-layout.halfSidePanel);
 
   await dropFile(page, {
     name: "example-electrodes.tsv",
