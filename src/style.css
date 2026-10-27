@@ -38,14 +38,8 @@
   }
 }
 
-.card-note {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
 .load-heading-row {
-  align-items: flex-start;
+  align-items: center;
 }
 
 .source-tabs {
@@ -149,24 +143,23 @@
 }
 
 .viewer-card {
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
-.viewer-card > .card-heading,
-.viewer-credit {
-  margin-right: 0.5rem;
-  margin-left: 0.5rem;
-}
-
-.viewer-heading-actions,
+/* Pinned over the empty left end of the engine's axial-slice title bar, clear of its controls. */
 .viewer-fullscreen-btn {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-}
-
-.viewer-heading-actions {
-  flex: 0 0 auto;
+  justify-content: center;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow);
 }
 
 .viewer-fullscreen-btn:hover {
@@ -175,17 +168,11 @@
 }
 
 .viewer-fullscreen-exit-icon,
-.viewer-fullscreen-exit-label {
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-icon {
   display: none;
 }
 
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-icon,
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-label {
-  display: none;
-}
-
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-icon,
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-label {
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-icon {
   display: inline;
 }
 
@@ -225,8 +212,7 @@
 }
 
 .viewer-credit {
-  margin-top: 0.75rem;
-  margin-bottom: 0;
+  margin: 0.5rem 0.5rem 0;
   color: var(--muted);
   font-size: 0.8rem;
 }
@@ -247,11 +233,6 @@
   flex: 1 1 auto;
   min-height: 0;
   height: auto;
-}
-
-.viewer-card:fullscreen .viewer-credit,
-.viewer-card:fullscreen .card-note {
-  display: none;
 }
 
 @media (max-width: 700px) {
@@ -277,11 +258,6 @@
   .viewer-frame-shell {
     min-height: 600px;
     height: 75vh;
-  }
-
-  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-enter-label,
-  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-exit-label {
-    display: none;
   }
 }
 

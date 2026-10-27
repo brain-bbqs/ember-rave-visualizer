@@ -21,7 +21,7 @@ type RaveWindow = Window & typeof globalThis & { raveViewerApp?: RaveViewerApp }
 
 export interface ViewerPort {
   whenReady(): Promise<void>;
-  loadCsv(file: File): Promise<void>;
+  loadTable(file: File): Promise<void>;
   clearElectrodes(): Promise<void>;
   setBackground(color: string): Promise<void>;
   destroy(): void;
@@ -69,12 +69,12 @@ export function createViewerBridge(frame: HTMLIFrameElement): ViewerPort {
 
   return {
     whenReady: () => readyPromise,
-    async loadCsv(file): Promise<void> {
+    async loadTable(file): Promise<void> {
       const current = await requireApp();
       const data = await current.fileLoader.loadFromResponse(file);
       const handlers = await current.handleFileData(data, file.name, { clearFirst: true });
       if (!handlers.includes("ElectrodeCoordinateHandler")) {
-        throw new Error("RAVE did not recognize this CSV as an electrode coordinate table.");
+        throw new Error("RAVE did not recognize this file as an electrode coordinate table.");
       }
     },
     async clearElectrodes(): Promise<void> {

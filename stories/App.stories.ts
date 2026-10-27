@@ -33,7 +33,7 @@ function applyLoadedState(wrapper: HTMLElement): void {
   status.hidden = false;
   status.classList.add("success");
   const title = document.createElement("strong");
-  title.textContent = "test-injection-mock-electrodes.csv loaded";
+  title.textContent = "test-injection-mock-electrodes.tsv loaded";
   const detail = document.createElement("span");
   detail.className = "load-status-detail";
   detail.textContent = "2 electrodes · 7 columns · Local file";
@@ -78,11 +78,11 @@ export const RemoteUrlDark = {
 };
 
 export const LoadedLight = {
-  name: "CSV loaded (light)",
+  name: "Table loaded (light)",
   render: () => buildApp("light", "loaded"),
 };
 
 export const LoadedDark = {
-  name: "CSV loaded (dark)",
+  name: "Table loaded (dark)",
   render: () => buildApp("dark", "loaded"),
 };
