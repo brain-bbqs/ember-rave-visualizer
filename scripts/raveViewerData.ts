@@ -1,5 +1,6 @@
 // Splits a self-contained threeBrain viewer export (the single HTML file RAVE writes) into a light
-// page plus the data files it embeds as base64, and joins the two back into the export byte for byte.
+// page plus the data files it embeds as base64, optionally leaving out whole surface types, and joins
+// the page and the files it kept back into the export (minus any dropped files) byte for byte.
 
 export interface ViewerDataFile {
   /** Path inside the data folder, exactly as the export names it. */
@@ -19,20 +20,49 @@ export interface ViewerManifestFile {
 }
 
 export interface ViewerManifest {
-  source: { sha256: string };
+  source: {
+    sha256: string;
+    /** Digest of the export with the dropped files' blocks removed, which {@link joinViewer} rebuilds. */
+    trimmedSha256: string;
+  };
   dataFolder: string;
+  droppedSurfaceTypes: string[];
   originalSettings: Record<string, unknown>;
-  /** In the order the export embedded them, which {@link joinViewer} needs to rebuild it. */
+  /** The export's files that ship, in the order it embedded them, which {@link joinViewer} needs. */
   files: ViewerManifestFile[];
+  /** Files the split writes itself: the config without the dropped surfaces. */
+  derived: ViewerManifestFile[];
+  /** The export's files left out with the dropped surfaces. */
+  dropped: Omit<ViewerManifestFile, "stored">[];
 }
 
 export interface SplitViewerResult {
   html: string;
   files: ViewerDataFile[];
+  derived: ViewerDataFile[];
+  dropped: ViewerDataFile[];
   originalSettings: Record<string, unknown>;
+  trimmedExport: string;
+}
+
+interface ConfigGroup {
+  name: string;
+  cache_name?: string | null;
+  group_data?: Record<string, unknown> | null;
+}
+
+interface ViewerConfig {
+  groups: ConfigGroup[];
+  geoms: { group?: { group_name?: string } | null }[];
 }
 
 export const DATA_FOLDER = "data/";
+
+// The template's inflated and spherical surfaces are nearly half of its data and this app does not
+// use them, so the split leaves them out.
+export const DROPPED_SURFACE_TYPES: readonly string[] = ["inflated", "sphere.reg"];
+
+export const DERIVED_CONFIG_PREFIX = "ember-";
 
 export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.json) -->`;
 
@@ -168,8 +198,60 @@ function embedFile({ path, type, bytes }: ViewerDataFile): string {
   return blocks.join("\n");
 }
 
-export function splitViewer(exportHtml: string): SplitViewerResult {
-  if (exportHtml.includes(DATA_MARKER)) throw new Error("This viewer has already been split.");
+function groupFiles(group: ConfigGroup): string[] {
+  return Object.values(group.group_data ?? {}).flatMap((entry) =>
+    typeof entry === "object" && entry !== null && "file_name" in entry && typeof entry.file_name === "string"
+      ? [`${group.cache_name ?? ""}/${entry.file_name}`]
+      : [],
+  );
+}
+
+function isSurfaceOf(group: ConfigGroup, types: readonly string[]): boolean {
+  const type = group.group_data?.surface_type;
+  return typeof type === "string" && types.includes(type);
+}
+
+/** Removes surface types from a viewer config, returning it and the data files only they used. */
+export function dropSurfaces(configText: string, types: readonly string[]): { config: string; droppedPaths: string[] } {
+  const config = JSON.parse(configText) as ViewerConfig;
+  const missing = types.filter((type) => !config.groups.some((group) => isSurfaceOf(group, [type])));
+  if (missing.length > 0) throw new Error(`The viewer config has no ${missing.join(", ")} surface to drop.`);
+
+  const dropped = config.groups.filter((group) => isSurfaceOf(group, types));
+  const kept = config.groups.filter((group) => !isSurfaceOf(group, types));
+  const keptFiles = new Set(kept.flatMap(groupFiles));
+  const droppedGroups = new Set(dropped.map((group) => group.name));
+  const droppedPaths = [...new Set(dropped.flatMap(groupFiles))].filter((path) => !keptFiles.has(path));
+  const geoms = config.geoms.filter((geom) => !droppedGroups.has(geom.group?.group_name ?? ""));
+  return { config: JSON.stringify({ ...config, groups: kept, geoms }), droppedPaths };
+}
+
+// Rather than edit the export's config, the split writes a trimmed copy beside it and points the
+// widget at that, so every file the export embedded stays byte-identical.
+function deriveConfig(
+  exportHtml: string,
+  files: readonly ViewerDataFile[],
+  types: readonly string[],
+): { derived: ViewerDataFile[]; droppedPaths: string[]; settings: Readonly<Record<string, unknown>> } {
+  if (types.length === 0) return { derived: [], droppedPaths: [], settings: DISTRIBUTED_SETTINGS };
+  const matches = [...exportHtml.matchAll(settingPattern("data_filename"))];
+  if (matches.length !== 1) throw new Error(`Expected one "data_filename" widget setting, found ${matches.length}.`);
+  const configPath = JSON.parse(matches[0][1]) as string;
+  const config = files.find((file) => file.path === configPath);
+  if (!config) throw new Error(`The export does not embed its config, ${configPath}.`);
+
+  const { config: text, droppedPaths } = dropSurfaces(new TextDecoder().decode(config.bytes), types);
+  const absent = droppedPaths.filter((path) => !files.some((file) => file.path === path));
+  if (absent.length > 0) throw new Error(`The export does not embed ${absent.join(", ")}.`);
+  const derivedPath = configPath.replace(/[^/]+$/, (name) => `${DERIVED_CONFIG_PREFIX}${name}`);
+  return {
+    derived: [{ path: derivedPath, type: config.type, bytes: new TextEncoder().encode(text) }],
+    droppedPaths,
+    settings: { ...DISTRIBUTED_SETTINGS, data_filename: derivedPath },
+  };
+}
+
+function contiguousBlocks(exportHtml: string): RegExpExecArray[] {
   const blocks = [...exportHtml.matchAll(BLOCK_PATTERN)];
   if (blocks.length === 0) throw new Error("The viewer export embeds no data files.");
   blocks.slice(1).forEach((block, index) => {
@@ -178,21 +260,34 @@ export function splitViewer(exportHtml: string): SplitViewerResult {
       throw new Error("The embedded data files are not one contiguous run of blocks.");
     }
   });
+  return blocks;
+}
 
-  const first = blocks[0];
-  const last = blocks[blocks.length - 1];
-  const withoutData = exportHtml.slice(0, first.index) + DATA_MARKER + exportHtml.slice(last.index + last[0].length);
-  const [withSettings, originalSettings] = replaceSettings(withoutData, DISTRIBUTED_SETTINGS);
-  const anchor = withSettings.indexOf(SHIM_ANCHOR);
-  if (anchor < 0) throw new Error("The viewer export has no script for the decompression shim to precede.");
-  const html = withSettings.slice(0, anchor) + DECOMPRESSION_SHIM + withSettings.slice(anchor);
-
-  const files = decodeBlocks(blocks);
-  const stored = files.map((file) => storedPath(file.path));
+export function splitViewer(exportHtml: string, dropSurfaceTypes: readonly string[] = []): SplitViewerResult {
+  if (exportHtml.includes(DATA_MARKER)) throw new Error("This viewer has already been split.");
+  const blocks = contiguousBlocks(exportHtml);
+  const all = decodeBlocks(blocks);
+  const { derived, droppedPaths, settings } = deriveConfig(exportHtml, all, dropSurfaceTypes);
+  const files = all.filter((file) => !droppedPaths.includes(file.path));
+  const stored = [...files, ...derived].map((file) => storedPath(file.path));
   if (new Set(stored).size !== stored.length || stored.some((path) => /(?:^|\/)(?:\.gz)?(?:\/|$)/.test(path))) {
     throw new Error("Two data files share a stored path, or a path segment is only underscores.");
   }
-  return { html, files, originalSettings };
+
+  const before = exportHtml.slice(0, blocks[0].index);
+  const after = exportHtml.slice(blocks[blocks.length - 1].index + blocks[blocks.length - 1][0].length);
+  const [withSettings, originalSettings] = replaceSettings(before + DATA_MARKER + after, settings);
+  const anchor = withSettings.indexOf(SHIM_ANCHOR);
+  if (anchor < 0) throw new Error("The viewer export has no script for the decompression shim to precede.");
+  const keptBlocks = blocks.filter((block) => !droppedPaths.includes(block[1]));
+  return {
+    html: withSettings.slice(0, anchor) + DECOMPRESSION_SHIM + withSettings.slice(anchor),
+    files,
+    derived,
+    dropped: all.filter((file) => droppedPaths.includes(file.path)),
+    originalSettings,
+    trimmedExport: before + keptBlocks.map((block) => block[0]).join("\n") + after,
+  };
 }
 
 export function joinViewer(

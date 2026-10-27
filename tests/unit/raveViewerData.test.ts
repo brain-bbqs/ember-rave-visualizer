@@ -3,6 +3,7 @@ import {
   DATA_MARKER,
   DECOMPRESSION_SHIM,
   DISTRIBUTED_SETTINGS,
+  dropSurfaces,
   joinViewer,
   splitViewer,
   storedPath,
@@ -127,5 +128,82 @@ describe("storedPath", () => {
     ["_subject/mri/_brain.mgz", "subject/mri/brain.mgz"],
   ])("stores %s as %s", (path, stored) => {
     expect(storedPath(path)).toBe(stored);
+  });
+});
+
+const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
+
+const CONFIG = JSON.stringify({
+  groups: [
+    { name: "__global_data", cache_name: "__global_data", group_data: { lut: { file_name: "lut.json" } } },
+    {
+      name: "Surface - pial",
+      cache_name: "subject/surf",
+      group_data: { surface_type: "pial", vertices: { file_name: "lh.pial" }, color: { file_name: "lh.sulc" } },
+    },
+    {
+      name: "Surface - inflated",
+      cache_name: "subject/surf",
+      group_data: { surface_type: "inflated", vertices: { file_name: "lh.inflated" }, color: { file_name: "lh.sulc" } },
+    },
+  ],
+  geoms: [
+    { name: "pial", group: { group_name: "Surface - pial" } },
+    { name: "inflated", group: { group_name: "Surface - inflated" } },
+    { name: "blank", group: null },
+  ],
+});
+
+describe("dropSurfaces", () => {
+  it("removes a surface type's group and geometries, and reports the files only it used", () => {
+    const { config, droppedPaths } = dropSurfaces(CONFIG, ["inflated"]);
+    const parsed = JSON.parse(config) as { groups: { name: string }[]; geoms: { name: string }[] };
+    expect(parsed.groups.map((group) => group.name)).toEqual(["__global_data", "Surface - pial"]);
+    expect(parsed.geoms.map((geom) => geom.name)).toEqual(["pial", "blank"]);
+    expect(droppedPaths).toEqual(["subject/surf/lh.inflated"]);
+  });
+
+  it("refuses a surface type the config does not have", () => {
+    expect(() => dropSurfaces(CONFIG, ["inflated", "sphere.reg"])).toThrow("no sphere.reg surface to drop");
+  });
+});
+
+describe("splitViewer with dropped surfaces", () => {
+  const PAGE = SPLIT_HTML.replace('{"x":{', '{"x":{"data_filename":"ember-config.json",');
+  const SETTINGS = { ...ORIGINAL_SETTINGS, data_filename: "config.json" };
+  const ALL_FILES: ViewerDataFile[] = [
+    { path: "config.json", type: "application/json", bytes: encode(CONFIG) },
+    { path: "__global_data/lut.json", type: "application/json", bytes: encode("{}") },
+    { path: "subject/surf/lh.pial", type: "application/octet-stream", bytes: bytes(30) },
+    { path: "subject/surf/lh.inflated", type: "application/octet-stream", bytes: bytes(40, 3) },
+    { path: "subject/surf/lh.sulc", type: "application/octet-stream", bytes: bytes(20, 5) },
+  ];
+  const KEPT_FILES = ALL_FILES.filter((file) => file.path !== "subject/surf/lh.inflated");
+  const split = splitViewer(joinViewer(PAGE, ALL_FILES, SETTINGS), ["inflated"]);
+
+  it("ships every other file unchanged and points the widget at a trimmed copy of the config", () => {
+    expect(split.files).toEqual(KEPT_FILES);
+    expect(split.dropped.map((file) => file.path)).toEqual(["subject/surf/lh.inflated"]);
+    expect(split.derived).toEqual([
+      { path: "ember-config.json", type: "application/json", bytes: encode(dropSurfaces(CONFIG, ["inflated"]).config) },
+    ]);
+    expect(split.originalSettings).toEqual(SETTINGS);
+    expect(split.html).toBe(PAGE);
+  });
+
+  it("joins back into the export without the dropped file's blocks", () => {
+    expect(split.trimmedExport).toBe(joinViewer(PAGE, KEPT_FILES, SETTINGS));
+    expect(joinViewer(split.html, split.files, split.originalSettings)).toBe(split.trimmedExport);
+  });
+
+  it.each([
+    ["an export missing its config", ALL_FILES.slice(1), "does not embed its config, config.json"],
+    [
+      "an export missing a file the config names",
+      ALL_FILES.filter((file) => file.path !== "subject/surf/lh.inflated"),
+      "does not embed subject/surf/lh.inflated",
+    ],
+  ])("rejects %s", (_, files, message) => {
+    expect(() => splitViewer(joinViewer(PAGE, files, SETTINGS), ["inflated"])).toThrow(message);
   });
 });

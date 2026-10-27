@@ -19,7 +19,11 @@ SPDX-FileCopyrightText = ["RAVE and three-brain-js contributors", "htmlwidgets c
 SPDX-License-Identifier = "MPL-2.0 AND MIT"
 
 [[annotations]]
-path = ["public/vendor/rave/data/global_data/**", "public/vendor/rave/data/config_*"]
+path = [
+  "public/vendor/rave/data/global_data/**",
+  "public/vendor/rave/data/config_*",
+  "public/vendor/rave/data/ember-config_*",
+]
 precedence = "override"
 SPDX-FileCopyrightText = "RAVE and three-brain-js contributors"
 SPDX-License-Identifier = "MPL-2.0 AND LicenseRef-MNI152-Template"

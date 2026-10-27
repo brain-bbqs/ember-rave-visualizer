@@ -7,6 +7,8 @@ import {
   DATA_MARKER,
   DECOMPRESSION_SHIM,
   DISTRIBUTED_SETTINGS,
+  DROPPED_SURFACE_TYPES,
+  dropSurfaces,
   joinViewer,
   storedPath,
   type ViewerManifest,
@@ -29,22 +31,35 @@ function readDataFile(stored: string): Uint8Array {
 }
 
 describe("vendored RAVE viewer", () => {
-  it("stores exactly the files its manifest lists, each where storedPath puts it", () => {
+  it("stores exactly the shipped and derived files its manifest lists, each where storedPath puts it", () => {
     const onDisk = readdirSync(DATA_DIR, { recursive: true, encoding: "utf8" })
       .filter((entry) => statSync(resolve(DATA_DIR, entry)).isFile())
       .map((entry) => entry.split(sep).join("/"));
-    expect(onDisk.sort()).toEqual(manifest.files.map((file) => file.stored).sort());
-    for (const file of manifest.files) expect(file.stored).toBe(storedPath(file.path));
+    const listed = [...manifest.files, ...manifest.derived];
+    expect(onDisk.sort()).toEqual(listed.map((file) => file.stored).sort());
+    for (const file of listed) expect(file.stored).toBe(storedPath(file.path));
   });
 
-  it("keeps every data file byte-identical to the copy the supplied export embedded", () => {
-    for (const file of manifest.files) {
+  it("matches every stored file to the digest its manifest records", () => {
+    for (const file of [...manifest.files, ...manifest.derived]) {
       const bytes = readDataFile(file.stored);
       expect([file.path, bytes.length, sha256(bytes)]).toEqual([file.path, file.size, file.sha256]);
     }
   });
 
-  it("differs from the supplied export only by its documented settings, shim and data folder", () => {
+  it("drops only the configured surface types, through a trimmed copy of the export's config", () => {
+    expect(manifest.droppedSurfaceTypes).toEqual(DROPPED_SURFACE_TYPES);
+    const configPath = manifest.originalSettings.data_filename as string;
+    const original = new TextDecoder().decode(readDataFile(storedPath(configPath)));
+    const { config, droppedPaths } = dropSurfaces(original, DROPPED_SURFACE_TYPES);
+
+    expect(manifest.derived.map((file) => file.path)).toEqual([`ember-${configPath}`]);
+    expect(new TextDecoder().decode(readDataFile(manifest.derived[0].stored))).toBe(config);
+    expect(manifest.dropped.map((file) => file.path).sort()).toEqual([...droppedPaths].sort());
+    expect(html).toContain(`"data_filename":"ember-${configPath}"`);
+  });
+
+  it("rebuilds the supplied export, minus the dropped files, from the page and the files it ships", () => {
     expect(manifest.source.sha256).toBe(ORIGINAL_SHA256);
     expect(html).toContain(DATA_MARKER);
     expect(html).toContain(DECOMPRESSION_SHIM);
@@ -53,6 +68,6 @@ describe("vendored RAVE viewer", () => {
     }
 
     const files = manifest.files.map(({ path, type, stored }) => ({ path, type, bytes: readDataFile(stored) }));
-    expect(sha256(joinViewer(html, files, manifest.originalSettings))).toBe(ORIGINAL_SHA256);
+    expect(sha256(joinViewer(html, files, manifest.originalSettings))).toBe(manifest.source.trimmedSha256);
   });
 });
