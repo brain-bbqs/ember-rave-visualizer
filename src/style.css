@@ -146,11 +146,12 @@
   padding: 0.5rem;
 }
 
-/* Pinned over the empty left end of the engine's axial-slice title bar, clear of its controls. */
+/* Bottom-right, where media players put it, and below the engine's control panel at desktop sizes.
+   Pointer devices reveal it on hover; a click inside the viewer always lands while it is shown. */
 .viewer-fullscreen-btn {
   position: absolute;
-  top: 0.4rem;
-  left: 0.4rem;
+  right: 0.5rem;
+  bottom: 0.5rem;
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -160,6 +161,18 @@
   background: var(--card);
   color: var(--text);
   box-shadow: var(--shadow);
+  transition: opacity 0.15s ease;
+}
+
+@media (hover: hover) {
+  .viewer-fullscreen-btn {
+    opacity: 0;
+  }
+
+  .viewer-frame-shell:hover .viewer-fullscreen-btn,
+  .viewer-fullscreen-btn:focus-visible {
+    opacity: 1;
+  }
 }
 
 .viewer-fullscreen-btn:hover {
@@ -262,7 +275,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dropzone {
+  .dropzone,
+  .viewer-fullscreen-btn {
     transition: none;
   }
 }
