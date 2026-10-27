@@ -10,8 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EMBER RAVE Visualizer</title>
     <link rel="icon" type="image/svg+xml" href="./assets/app-logo-DpyVFZhq.svg" />
-    <script type="module" crossorigin src="./assets/index-jgCUCR9g.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DwjSwWyj.css">
+    <script type="module" crossorigin src="./assets/index-B2ITCFNZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DBZYoqsy.css">
   </head>
   <body>
     <a
@@ -96,36 +96,11 @@
           <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
         </div>
 
-        <div id="source-tabs" class="source-tabs" role="group" aria-label="Electrode table source">
-          <button type="button" id="source-local-btn" class="primary" aria-pressed="true">
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <path d="M3 7h5l2 2h11v10H3z" />
-              <path d="M3 7V5h6l2 2" />
-            </svg>
-            Local file
-          </button>
-          <button type="button" id="source-url-btn" aria-pressed="false">
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" />
-              <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
-            </svg>
-            Remote URL
+        <!-- Each source is marked by what it reads from, as in clip-extractor; the marks are decorative,
+             since the label beside each already names it. -->
+        <div id="source-tabs" class="seg source-seg" role="group" aria-label="Electrode table source">
+          <button type="button" id="source-local-btn" class="active" aria-pressed="true">
+            <span class="seg-icon" aria-hidden="true">📁</span>Load local file
           </button>
           <button
             type="button"
@@ -134,31 +109,21 @@
             disabled
             title="EMBER sign-in and archive browsing will be added in a follow-up"
           >
-            EMBER
+            <img class="seg-icon" src="./assets/ember-mark-X20jsAgA.svg" alt="" width="12" height="15" />Browse EMBER
             <span class="badge upload">Coming soon</span>
+          </button>
+          <button type="button" id="source-url-btn" aria-pressed="false">
+            <span class="seg-icon" aria-hidden="true">🔗</span>Load from a URL
           </button>
         </div>
 
         <div id="local-source-pane" class="source-pane">
           <div id="dropzone" class="dropzone">
             <div class="dz-inner">
-              <div class="dz-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="38"
-                  height="38"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  aria-hidden="true"
-                >
-                  <path d="M4 3h11l5 5v13H4z" />
-                  <path d="M15 3v5h5M8 13h8M8 17h8" />
-                </svg>
-              </div>
+              <div class="dz-icon"><span aria-hidden="true">📋</span></div>
               <p>
-                Drop an electrode table here, or
-                <button type="button" id="browse-file-btn" class="dz-browse">browse for a file</button>.
+                Drop a table here, or click to browse
+                <button type="button" id="browse-file-btn" class="dz-browse">files</button>.
               </p>
               <p class="dz-hint">The file is only loaded locally and is never uploaded to EMBER.</p>
               <p id="dropzone-reject" class="dz-reject" hidden></p>
