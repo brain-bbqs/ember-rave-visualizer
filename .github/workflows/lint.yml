@@ -42,9 +42,8 @@ jobs:
 
       # Dependabot pull_request runs get no repository secrets, so CODECOV_TOKEN is empty and the
       # upload would fail every dependency-bump PR; skip it for that actor instead of failing lint.
-      # Skipped in the template itself too, which has no Codecov project behind it.
       - name: Upload coverage to Codecov
-        if: ${{ github.actor != 'dependabot[bot]' && github.repository != 'brain-bbqs/bbqs-web-app-template' }}
+        if: ${{ github.actor != 'dependabot[bot]' }}
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info

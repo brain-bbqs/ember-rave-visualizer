@@ -1,0 +1,11 @@
+MNI152 Template Data Notice
+===========================
+
+The vendored RAVE viewer contains the `cvs_avg35_inMNI152` template brain and related atlas data.
+These materials are not covered by the EMBER RAVE Visualizer's MIT license.
+
+The RAVE viewer's creator identified the FreeSurfer software license as the likely applicable license for this template.
+No additional rights to the template data are granted by this notice.
+Review the current FreeSurfer licensing terms before redistributing or reusing the embedded template separately:
+
+https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferSoftwareLicense

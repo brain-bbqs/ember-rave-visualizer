@@ -1,92 +1,288 @@
-/* The shell every BBQS companion app shares comes from @brain-bbqs/ui: the theme tokens (light,
-   dark via the OS preference or the header toggle), the page defaults, the header, watermark and
-   footer bar, the shared controls, and the "What's New" modal. Set a token or knob (see that
-   package's README) on :root below to change it. The template draws its own dropzone, so it skips
-   the package's dropzone.css.
-   CSS allows @import only at the top, so every rule below follows the shared ones. */
+/* The common Brain-BBQS/EMBER-HEARTH shell and palette stay shared; this app only adds its
+   source picker and the frame around the RAVE engine below. */
 @import "@brain-bbqs/ui/styles/tokens.css";
 @import "@brain-bbqs/ui/styles/base.css";
 @import "@brain-bbqs/ui/styles/shell.css";
 @import "@brain-bbqs/ui/styles/controls.css";
+@import "@brain-bbqs/ui/styles/dropzone.css";
 @import "@brain-bbqs/ui/styles/dataset-picker.css";
 @import "@brain-bbqs/ui/styles/human-subjects.css";
 @import "@brain-bbqs/ui/styles/whats-new.css";
 
-/* ------------------------------------------------------------------------------------------ */
-/* Cards */
-/* ------------------------------------------------------------------------------------------ */
+:root {
+  --page-max-width: 1400px;
+}
+
+/* This viewer uses a substantially wider content column than the shared shell's default app.
+   Keep the fixed footer rails and watermark only when the viewport leaves enough room beside that
+   column; otherwise put the footer in normal flow and rely on the header's app mark. */
+@media (max-width: 1940px) {
+  .brand-watermark-link {
+    display: none;
+  }
+
+  main {
+    padding-bottom: 2rem;
+  }
+
+  .page-footer-bar {
+    position: static;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1rem 1.5rem;
+  }
+
+  .footer-left {
+    align-items: center;
+  }
+}
 
 .card-note {
-  margin: 1rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-/* ------------------------------------------------------------------------------------------ */
-/* The dropzone, and the summary of what it loaded */
-/* ------------------------------------------------------------------------------------------ */
+.load-heading-row {
+  align-items: flex-start;
+}
+
+.source-tabs {
+  display: inline-flex;
+  max-width: 100%;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.source-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.source-tabs > button:last-child {
+  border-right: 0;
+}
+
+.source-tabs > button:not(.primary):not(:disabled):hover {
+  background: var(--accent-soft);
+}
+
+.source-tabs .badge {
+  margin-left: 0.15rem;
+}
+
+.source-pane {
+  min-height: 8.5rem;
+}
 
 .dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  padding: 2rem 1rem;
-  text-align: center;
   color: var(--muted);
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
 }
-.dropzone:hover,
-.dropzone.dragover {
+
+.dropzone:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-.dz-inner p {
-  margin: 0.5rem 0 0;
+.url-row {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1.75rem;
 }
 
-.dz-icon {
-  font-size: 2rem;
-  line-height: 1;
-}
-
-/* A button that reads as the link in the sentence it sits in, not as a control beside it. */
-.dz-browse {
+.url-row input[type="url"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
-  border: none;
-  background: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   padding: 0;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.dz-hint {
-  font-size: 0.85rem;
-}
-
-.dz-reject {
-  color: var(--err);
-  font-weight: 600;
-}
-
-.file-summary {
+.load-status {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
+  gap: 0.35rem 0.6rem;
+  margin-top: 1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
-.file-summary-name {
-  font-weight: 600;
-  overflow-wrap: anywhere;
+.load-status.error {
+  background: var(--err-soft);
+  color: var(--err);
 }
 
-.file-summary-stats {
+.load-status.success {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.load-status-detail {
+  font-size: 0.85rem;
+}
+
+.viewer-card {
+  padding: 1rem;
+}
+
+.viewer-card > .card-heading,
+.viewer-credit {
+  margin-right: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.viewer-heading-actions,
+.viewer-fullscreen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.viewer-heading-actions {
+  flex: 0 0 auto;
+}
+
+.viewer-fullscreen-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.viewer-fullscreen-exit-icon,
+.viewer-fullscreen-exit-label {
+  display: none;
+}
+
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-icon,
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-label {
+  display: none;
+}
+
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-icon,
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-label {
+  display: inline;
+}
+
+.viewer-frame-shell {
+  position: relative;
+  min-height: 640px;
+  height: min(76vh, 840px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.viewer-frame-shell iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--bg);
+}
+
+.viewer-loading,
+.viewer-test-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg);
   color: var(--muted);
-  font-size: 0.9rem;
+}
+
+.viewer-test-placeholder {
+  background: var(--accent-soft);
+}
+
+.viewer-credit {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.viewer-card:fullscreen {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 1rem;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: var(--card);
+}
+
+.viewer-card:fullscreen .viewer-frame-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.viewer-card:fullscreen .viewer-credit,
+.viewer-card:fullscreen .card-note {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .source-tabs {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .source-tabs > button {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .source-tabs > button:last-child {
+    border-bottom: 0;
+  }
+
+  .url-row {
+    flex-direction: column;
+  }
+
+  .viewer-frame-shell {
+    min-height: 600px;
+    height: 75vh;
+  }
+
+  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-enter-label,
+  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-exit-label {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

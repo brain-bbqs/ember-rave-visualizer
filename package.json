@@ -1,7 +1,7 @@
 {
-  "name": "web-app-template",
-  "version": "0.1.6",
-  "description": "A single-page, backend-free web app: the shared shell and tooling of the BBQS companion apps, ready for a new one.",
+  "name": "ember-rave-visualizer",
+  "version": "0.1.0",
+  "description": "Visualize intracranial electrode coordinates on an interactive RAVE MNI152 template brain.",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -40,7 +40,6 @@
     "vitest": "^5.0.0"
   },
   "dependencies": {
-    "@brain-bbqs/ui": "^0.3.0",
-    "@brain-bbqs/utils": "^0.2.0"
+    "@brain-bbqs/ui": "^0.3.0"
   }
 }
