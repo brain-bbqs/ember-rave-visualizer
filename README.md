@@ -14,9 +14,7 @@
 
 Visualize local or remotely hosted electrode-coordinate tables on an interactive RAVE MNI152 template brain.
 
-Tables are tab-separated (`.tsv`) by default, and comma-separated (`.csv`) files work too.
-Each row is one electrode contact, with its MNI152 coordinates in millimetres.
-The column names are case-sensitive, and extra columns are allowed:
+The app accepts tabular files (`.tsv`/`.csv`) of the following structure:
 
 <div align="center">
 
@@ -29,7 +27,7 @@ The column names are case-sensitive, and extra columns are allowed:
 
 </div>
 
-[Download example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try the app with nine contacts in the left amygdala and both hippocampi, or paste that link into the app's **Load from a URL** tab.
+[Download an example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try out the app with nine contacts in the left amygdala and hippocampus.
 
 ---
 
