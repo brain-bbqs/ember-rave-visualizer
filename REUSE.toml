@@ -15,8 +15,20 @@ SPDX-License-Identifier = "MPL-2.0"
 [[annotations]]
 path = "public/vendor/rave/RAVE_MNI_template.html"
 precedence = "override"
+SPDX-FileCopyrightText = ["RAVE and three-brain-js contributors", "htmlwidgets contributors"]
+SPDX-License-Identifier = "MPL-2.0 AND MIT"
+
+[[annotations]]
+path = ["public/vendor/rave/data/global_data/**", "public/vendor/rave/data/config_*"]
+precedence = "override"
 SPDX-FileCopyrightText = "RAVE and three-brain-js contributors"
 SPDX-License-Identifier = "MPL-2.0 AND LicenseRef-MNI152-Template"
+
+[[annotations]]
+path = "public/vendor/rave/data/cvs_avg35_inMNI152/**"
+precedence = "override"
+SPDX-FileCopyrightText = "FreeSurfer and MNI152 template data contributors"
+SPDX-License-Identifier = "LicenseRef-MNI152-Template"
 
 [[annotations]]
 path = "LICENSES/LicenseRef-MNI152-Template.txt"

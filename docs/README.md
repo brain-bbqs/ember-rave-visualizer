@@ -21,5 +21,23 @@ npm ci
 npm run dev
 ```
 
+## Updating the vendored viewer
+
+`public/vendor/rave/` holds RAVE's MNI152 viewer, split out of the self-contained HTML export RAVE writes.
+The export embeds its template data as about 57 MB of base64; the split keeps the page to 2.6 MB and stores the data as separate files in `data/`, gzip-compressed apart from the `.mgz` volumes.
+Stored names also drop leading underscores (`__global_data` becomes `global_data`), because Jekyll on GitHub Pages leaves such paths out of the site.
+A short script the split adds to the page maps the engine's requests to the stored files and inflates them as they arrive.
+
+To replace the viewer, split the new export with Node 22.18 or later, which runs the TypeScript directly:
+
+```bash
+node scripts/split-rave-viewer.ts path/to/viewer-export.html
+```
+
+This rewrites `RAVE_MNI_template.html`, `data/` and `manifest.json`, and applies the widget settings listed in `scripts/raveViewerData.ts`.
+Then set `ORIGINAL_SHA256` in `tests/unit/vendorIntegrity.test.ts` to the new export's digest (`manifest.json` records it), and update the viewer section of `THIRD_PARTY_NOTICES.md`.
+
+## Deployment
+
 The production site is deployed from `main` to the `gh-pages` branch by `.github/workflows/deploy.yml`.
 The repository's GitHub Pages source must be configured to serve the root of that branch at `https://brain-bbqs.github.io/ember-rave-visualizer/`.
