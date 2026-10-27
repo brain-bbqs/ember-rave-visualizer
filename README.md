@@ -18,7 +18,7 @@ The app expects the case-sensitive columns `Electrode`, `MNI152_x`, `MNI152_y`, 
 
 ---
 
-Built & maintained by the [Center for Open Neuroscience](https://centerforopenneuroscience.org).
+Built & maintained by the [Center for Open Neuroscience](https://centerforopenneuroscience.org) and the [Johns Hopkins Applied Physics Laboratory](https://www.jhuapl.edu/).
 
 The embedded viewer engine was created by the [RAVE](https://rave.wiki/) and [three-brain-js](https://github.com/dipterix/three-brain-js) contributors.
 Its MPL-2.0 license and the MNI152 template caveat are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
