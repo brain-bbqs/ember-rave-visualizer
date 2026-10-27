@@ -10,8 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EMBER RAVE Visualizer</title>
     <link rel="icon" type="image/svg+xml" href="./assets/app-logo-DpyVFZhq.svg" />
-    <script type="module" crossorigin src="./assets/index-B2ITCFNZ.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DBZYoqsy.css">
+    <script type="module" crossorigin src="./assets/index-DNDdfkvm.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Bqfig23f.css">
   </head>
   <body>
     <a
@@ -87,34 +87,37 @@
       </header>
 
       <p class="site-subtitle">
-        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain.</span>
+        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain</span>
       </p>
 
       <section class="card load-card" id="load-card" aria-labelledby="load-heading">
-        <div class="card-heading load-heading-row">
-          <h2 id="load-heading">Load electrode coordinates</h2>
-          <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
-        </div>
-
-        <!-- Each source is marked by what it reads from, as in clip-extractor; the marks are decorative,
-             since the label beside each already names it. -->
-        <div id="source-tabs" class="seg source-seg" role="group" aria-label="Electrode table source">
-          <button type="button" id="source-local-btn" class="active" aria-pressed="true">
-            <span class="seg-icon" aria-hidden="true">📁</span>Load local file
-          </button>
-          <button
-            type="button"
-            id="source-ember-btn"
-            aria-pressed="false"
-            disabled
-            title="EMBER sign-in and archive browsing will be added in a follow-up"
-          >
-            <img class="seg-icon" src="./assets/ember-mark-X20jsAgA.svg" alt="" width="12" height="15" />Browse EMBER
-            <span class="badge upload">Coming soon</span>
-          </button>
-          <button type="button" id="source-url-btn" aria-pressed="false">
-            <span class="seg-icon" aria-hidden="true">🔗</span>Load from a URL
-          </button>
+        <h2 id="load-heading" class="sr-only">Load electrode coordinates</h2>
+        <!-- clip-extractor's top row: equal side slots keep the source picker centred on the card. -->
+        <div class="card-toprow">
+          <div class="toprow-slot"></div>
+          <!-- Each source is marked by what it reads from, as in clip-extractor; the marks are
+               decorative, since the label beside each already names it. -->
+          <div id="source-tabs" class="seg source-seg" role="group" aria-label="Electrode table source">
+            <button type="button" id="source-local-btn" class="active" aria-pressed="true">
+              <span class="seg-icon" aria-hidden="true">📁</span>Load local file
+            </button>
+            <button
+              type="button"
+              id="source-ember-btn"
+              aria-pressed="false"
+              disabled
+              title="EMBER sign-in and archive browsing will be added in a follow-up"
+            >
+              <img class="seg-icon" src="./assets/ember-mark-X20jsAgA.svg" alt="" width="12" height="15" />Browse EMBER
+              <span class="badge upload">Coming soon</span>
+            </button>
+            <button type="button" id="source-url-btn" aria-pressed="false">
+              <span class="seg-icon" aria-hidden="true">🔗</span>Load from a URL
+            </button>
+          </div>
+          <div class="toprow-slot toprow-end">
+            <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
+          </div>
         </div>
 
         <div id="local-source-pane" class="source-pane">
@@ -199,6 +202,19 @@
             </svg>
           </button>
         </div>
+        <!-- Attribution under the map's corner, as web maps credit their tiles. -->
+        <p class="viewer-credit">
+          Viewer engine by the
+          <a href="https://rave.wiki/" target="_blank" rel="noopener">RAVE project</a> and
+          <a href="https://github.com/dipterix/three-brain-js" target="_blank" rel="noopener">three-brain-js</a>
+          contributors. See
+          <a
+            href="https://github.com/brain-bbqs/ember-rave-visualizer/blob/main/THIRD_PARTY_NOTICES.md"
+            target="_blank"
+            rel="noopener"
+            >third-party notices</a
+          >.
+        </p>
       </section>
     </main>
 
@@ -237,18 +253,6 @@
             title="View source on GitHub"
           ></a>
         </div>
-        <p class="footer-credit">
-          Viewer engine by the
-          <a href="https://rave.wiki/" target="_blank" rel="noopener">RAVE project</a> and
-          <a href="https://github.com/dipterix/three-brain-js" target="_blank" rel="noopener">three-brain-js</a>
-          contributors. See
-          <a
-            href="https://github.com/brain-bbqs/ember-rave-visualizer/blob/main/THIRD_PARTY_NOTICES.md"
-            target="_blank"
-            rel="noopener"
-            >third-party notices</a
-          >.
-        </p>
       </div>
       <div class="footer-brands">
         <a
