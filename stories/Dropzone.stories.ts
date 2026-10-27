@@ -10,16 +10,10 @@ function buildDropzone(state: DropzoneState): HTMLElement {
   if (state === "dragover") dz.classList.add("dragover");
   dz.innerHTML = `
     <div class="dz-inner">
-      <div class="dz-icon">
-        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
-          stroke-width="1.7" aria-hidden="true">
-          <path d="M4 3h11l5 5v13H4z" />
-          <path d="M15 3v5h5M8 13h8M8 17h8" />
-        </svg>
-      </div>
+      <div class="dz-icon"><span aria-hidden="true">📋</span></div>
       <p>
-        Drop an electrode table here, or
-        <button type="button" class="dz-browse">browse for a file</button>.
+        Drop a table here, or click to browse
+        <button type="button" class="dz-browse">files</button>.
       </p>
       <p class="dz-hint">The file is only loaded locally and is never uploaded to EMBER.</p>
       <p class="dz-reject" ${state === "rejected" ? "" : "hidden"}>

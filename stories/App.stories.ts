@@ -22,9 +22,9 @@ function applyFakeViewer(wrapper: HTMLElement): void {
 function applyUrlState(wrapper: HTMLElement): void {
   required<HTMLElement>(wrapper, "#local-source-pane").hidden = true;
   required<HTMLElement>(wrapper, "#url-source-pane").hidden = false;
-  required<HTMLButtonElement>(wrapper, "#source-local-btn").classList.remove("primary");
+  required<HTMLButtonElement>(wrapper, "#source-local-btn").classList.remove("active");
   required<HTMLButtonElement>(wrapper, "#source-local-btn").setAttribute("aria-pressed", "false");
-  required<HTMLButtonElement>(wrapper, "#source-url-btn").classList.add("primary");
+  required<HTMLButtonElement>(wrapper, "#source-url-btn").classList.add("active");
   required<HTMLButtonElement>(wrapper, "#source-url-btn").setAttribute("aria-pressed", "true");
 }
 

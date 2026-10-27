@@ -42,35 +42,61 @@
   align-items: center;
 }
 
-.source-tabs {
+/* clip-extractor's segmented control, copied as it stands there (see AGENTS.md on siblings). */
+.seg {
   display: inline-flex;
-  max-width: 100%;
-  margin-bottom: 1rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.source-tabs > button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-width: 0;
-  border: 0;
-  border-right: 1px solid var(--border);
+.seg button {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border: none;
   border-radius: 0;
+  border-right: 1px solid var(--border);
 }
 
-.source-tabs > button:last-child {
-  border-right: 0;
+.seg-icon {
+  flex-shrink: 0;
+  height: 1em;
+  width: auto;
+  line-height: 1;
 }
 
-.source-tabs > button:not(.primary):not(:disabled):hover {
+img.seg-icon {
+  height: 1.15em;
+}
+
+.seg button:last-child {
+  border-right: none;
+}
+
+.seg button:hover:not(.active):not(:disabled) {
   background: var(--accent-soft);
 }
 
-.source-tabs .badge {
+.seg button.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.source-seg {
+  margin-bottom: 1rem;
+}
+
+.source-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.source-seg .badge {
   margin-left: 0.15rem;
 }
 
@@ -257,22 +283,28 @@
   height: auto;
 }
 
-@media (max-width: 700px) {
-  .source-tabs {
-    display: flex;
+/* As in clip-extractor, the source picker stacks into full-width bars once its row no longer fits. */
+@media (max-width: 600px) {
+  .source-seg {
     flex-direction: column;
+    width: 16rem;
+    max-width: 100%;
   }
 
-  .source-tabs > button {
-    width: 100%;
-    border-right: 0;
+  .source-seg button {
+    justify-content: center;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    border-right: none;
     border-bottom: 1px solid var(--border);
   }
 
-  .source-tabs > button:last-child {
-    border-bottom: 0;
+  .source-seg button:last-child {
+    border-bottom: none;
   }
+}
 
+@media (max-width: 700px) {
   .url-row {
     flex-direction: column;
   }
