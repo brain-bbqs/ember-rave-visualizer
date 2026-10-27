@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DECOMPRESSION_SHIM } from "../../scripts/raveViewerData";
 
 const PAGE = "https://example.org/app/vendor/rave/RAVE_MNI_template.html";
-const CONTENT = new TextEncoder().encode('{"surface":[1,2,3]}');
+const CONTENT = new Uint8Array([0xff, 0xff, 0xfe, 1, 2, 3]);
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -24,27 +24,31 @@ const DATA = "https://example.org/app/vendor/rave/data/";
 
 describe("viewer decompression shim", () => {
   it.each([
-    ["a path relative to the page", "data/subject/surf/lh.pial", "subject/surf/lh.pial.gz", "application/octet-stream"],
-    ["an origin-relative path", "/app/vendor/rave/data/config_1.json", "config_1.json.gz", "application/json"],
-    ["a Request", new Request(`${DATA}__global_data/lut.json`), "global_data/lut.json.gz", "application/json"],
-  ])("inflates a compressed data file requested by %s", async (_, input, stored, type) => {
+    ["a path relative to the page", "data/subject/surf/lh.pial", "subject/surf/lh.pial.gz"],
+    ["an origin-relative path", "/app/vendor/rave/data/subject/surf/rh.sulc", "subject/surf/rh.sulc.gz"],
+    ["a Request", new Request(`${DATA}__subject/surf/lh.annot`), "subject/surf/lh.annot.gz"],
+    ["a name merely ending in json", "data/subject/surf/lh.xjson", "subject/surf/lh.xjson.gz"],
+  ])("inflates a compressed data file requested by %s", async (_, input, stored) => {
     const nativeFetch = vi.fn(async () => new Response(gzipSync(CONTENT)));
     const response = await installShim(nativeFetch)(input);
     expect(requestedUrl(nativeFetch)).toBe(`${DATA}${stored}`);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(CONTENT);
-    expect(response.headers.get("Content-Type")).toBe(type);
+    expect(response.headers.get("Content-Type")).toBe("application/octet-stream");
   });
 
-  it("fetches an .mgz volume from its stored path without inflating it", async () => {
-    const served = new Response("volume");
+  it.each([
+    ["an .mgz volume", "data/__subject/mri/brain.mgz", "subject/mri/brain.mgz"],
+    ["a JSON file", "data/__global_data/lut.json", "global_data/lut.json"],
+  ])("fetches %s from its stored path without inflating it", async (_, input, stored) => {
+    const served = new Response("as stored");
     const nativeFetch = vi.fn(async () => served);
-    await expect(installShim(nativeFetch)("data/__subject/mri/brain.mgz")).resolves.toBe(served);
-    expect(requestedUrl(nativeFetch)).toBe(`${DATA}subject/mri/brain.mgz`);
+    await expect(installShim(nativeFetch)(input)).resolves.toBe(served);
+    expect(requestedUrl(nativeFetch)).toBe(`${DATA}${stored}`);
   });
 
   it("keeps a Request's headers when it asks for the compressed copy", async () => {
     const nativeFetch = vi.fn(async () => new Response(gzipSync(CONTENT)));
-    const input = new Request("https://example.org/app/vendor/rave/data/a.json", { headers: { "X-Trace": "1" } });
+    const input = new Request("https://example.org/app/vendor/rave/data/lh.pial", { headers: { "X-Trace": "1" } });
     await installShim(nativeFetch)(input);
     const [forwarded] = nativeFetch.mock.calls[0] as unknown as [Request];
     expect(forwarded.headers.get("X-Trace")).toBe("1");
@@ -65,6 +69,6 @@ describe("viewer decompression shim", () => {
     ["a response the browser already decoded", new Response(CONTENT, { headers: { "Content-Encoding": "gzip" } })],
   ])("returns %s unchanged", async (_, served) => {
     const nativeFetch = vi.fn(async () => served);
-    await expect(installShim(nativeFetch)("data/a.json")).resolves.toBe(served);
+    await expect(installShim(nativeFetch)("data/lh.pial")).resolves.toBe(served);
   });
 });

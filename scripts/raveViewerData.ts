@@ -67,20 +67,42 @@ export const DERIVED_CONFIG_PREFIX = "ember-";
 export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.json) -->`;
 
 // The engine evaluates this once its data has loaded, with `app` and `canvas` in scope. Besides
-// handing the app to the parent page, it collapses the control panel's sections and offsets the
-// main camera's view so the brain sits centred in the part of the canvas the slice panels leave
-// uncovered; a view offset shifts the image without moving the point the brain rotates about.
+// handing the app to the parent page, it collapses the control panel's sections and lays the view
+// out for the frame:
+// - The engine narrows its canvas to dock the control panel in a column beside it; the canvas runs
+//   the full width instead, under the panel as it already does under the slice panels, so the
+//   frame's bottom-right corner is part of the view.
+// - A view offset frames the brain as the engine framed it in the docked layout, at the same size
+//   and centred between the slice panels and the control panel's column; it moves and scales the
+//   image without moving the point the brain rotates about. A frame too narrow to spare the panel
+//   its column is framed across its full width instead.
+// - The axis compass and its scale bar move from the bottom-left corner, under the slice panels,
+//   to the bottom-right one, scale bar first, leaving room for the page's full-screen button (44px,
+//   its size and inset plus a gap). The engine re-places the compass every frame in compass units
+//   of 1/zoom, so each frame's placement is moved along the camera's right axis.
 export const VIEWER_ADAPTER = `window.raveViewerApp = app;
 app.controllerGUI.getController('Dragdrop Uploader').hide();
 app.controllerGUI.folders.forEach((folder) => folder.close());
 if (!canvas.emberCentred) {
   canvas.emberCentred = true;
   const centre = () => {
-    const area = canvas.main_canvas;
-    if (!area.clientWidth || !area.clientHeight) return;
-    const shift = canvas.sideCanvasEnabled ? canvas.side_width / 2 : 0;
-    canvas.mainCamera.setViewOffset(area.clientWidth, area.clientHeight, -shift, 0, area.clientWidth, area.clientHeight);
+    const width = canvas.main_canvas.clientWidth;
+    const height = canvas.main_canvas.clientHeight;
+    if (!width || !height) return;
+    const side = canvas.sideCanvasEnabled ? canvas.side_width : 0;
+    const panel = app.controllerClosed ? 0 : app.$settingsPanel.offsetWidth;
+    const docked = width - panel >= panel ? width - panel : width;
+    const dockedHeight = (height * docked) / width;
+    canvas.mainCamera.setViewOffset(docked, dockedHeight, -side / 2, (dockedHeight - height) / 2, width, height);
     canvas.needsUpdate = true;
+  };
+  app.resize = (width, height) => {
+    const fullWidth = width ?? app.$wrapper.clientWidth;
+    const fullHeight = height ?? app.$wrapper.clientHeight;
+    if (fullWidth <= 0 || fullHeight <= 0) return;
+    app.$settingsPanel.style.maxHeight = fullHeight + 'px';
+    canvas.handle_resize(fullWidth, fullHeight);
+    centre();
   };
   for (const name of ['enableSideCanvas', 'disableSideCanvas']) {
     const original = canvas[name].bind(canvas);
@@ -91,7 +113,56 @@ if (!canvas.emberCentred) {
     };
   }
   new ResizeObserver(centre).observe(canvas.main_canvas);
-  centre();
+  app.resize();
+}
+if (!canvas.compass.emberCornered) {
+  const compass = canvas.compass;
+  compass.emberCornered = true;
+  compass.ruler.position.x -= 50;
+  compass.rulerMeasure.position.x -= 50;
+  const placeBottomLeft = compass.update.bind(compass);
+  compass.update = () => {
+    placeBottomLeft();
+    const camera = canvas.mainCamera;
+    const width = canvas.main_canvas.clientWidth;
+    const height = canvas.main_canvas.clientHeight;
+    if (!compass.container.visible || !width || !height) return;
+    // The visible frustum's right and bottom edges in camera space, as three.js derives them.
+    const scale = 1 / camera.zoom;
+    const view = camera.view && camera.view.enabled ? camera.view : { fullWidth: width, fullHeight: height, offsetX: 0, offsetY: 0, width, height };
+    const halfWidth = ((camera.right - camera.left) * scale) / 2;
+    const halfHeight = ((camera.top - camera.bottom) * scale) / 2;
+    const unitsPerPixel = (2 * halfWidth) / view.fullWidth;
+    const right = (camera.right + camera.left) / 2 - halfWidth + unitsPerPixel * (view.offsetX + view.width);
+    const bottom = (camera.top + camera.bottom) / 2 + halfHeight - ((2 * halfHeight) / view.fullHeight) * (view.offsetY + view.height);
+    const goalRight = right - 13 * scale - 44 * unitsPerPixel;
+    const goalUp = bottom + 10 * scale;
+    // The camera's right and up axes, from where it sits and what it looks at.
+    const eye = camera.position;
+    const target = canvas.trackball.target;
+    const up = camera.up;
+    let bx = eye.x - target.x, by = eye.y - target.y, bz = eye.z - target.z;
+    const backLength = Math.hypot(bx, by, bz);
+    let rx = up.y * bz - up.z * by, ry = up.z * bx - up.x * bz, rz = up.x * by - up.y * bx;
+    const rightLength = Math.hypot(rx, ry, rz);
+    if (!backLength || !rightLength) return;
+    bx /= backLength;
+    by /= backLength;
+    bz /= backLength;
+    rx /= rightLength;
+    ry /= rightLength;
+    rz /= rightLength;
+    const ux = by * rz - bz * ry, uy = bz * rx - bx * rz, uz = bx * ry - by * rx;
+    const at = compass.container.position;
+    const dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
+    const moveRight = goalRight - (dx * rx + dy * ry + dz * rz);
+    const moveUp = goalUp - (dx * ux + dy * uy + dz * uz);
+    at.x += rx * moveRight + ux * moveUp;
+    at.y += ry * moveRight + uy * moveUp;
+    at.z += rz * moveRight + uz * moveUp;
+    compass.rulerContainer.position.copy(at);
+  };
+  canvas.needsUpdate = true;
 }
 window.parent.postMessage({ type: 'ember-rave-viewer-ready' }, window.location.origin);`;
 
@@ -104,17 +175,17 @@ export const DISTRIBUTED_SETTINGS: Readonly<Record<string, unknown>> = {
 };
 
 // The engine requests the export's own file names; this shim maps each request under the data
-// folder to its storedPath and inflates the gzip-compressed files natively before the engine sees them.
+// folder to its storedPath and inflates the gzip-compressed surface files natively before the engine
+// sees them.
 export const DECOMPRESSION_SHIM = `<script>
-// Added by EMBER: template data beside this page is stored gzip-compressed (see manifest.json).
+// Added by EMBER: the binary template data beside this page is stored gzip-compressed (see manifest.json).
 (() => {
   const dataRoot = new URL("${DATA_FOLDER}", document.baseURI);
   const nativeFetch = window.fetch.bind(window);
   window.fetch = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : String(input), document.baseURI);
     if (url.origin !== dataRoot.origin || !url.pathname.startsWith(dataRoot.pathname)) return nativeFetch(input, init);
-    const compressed = !url.pathname.endsWith(".mgz");
-    const type = url.pathname.endsWith(".json") ? "application/json" : "application/octet-stream";
+    const compressed = !/\\.(mgz|json)$/.test(url.pathname);
     const segments = url.pathname.slice(dataRoot.pathname.length).split("/");
     url.pathname = dataRoot.pathname + segments.map((segment) => segment.replace(/^_+/, "")).join("/");
     if (compressed) url.pathname += ".gz";
@@ -126,7 +197,7 @@ export const DECOMPRESSION_SHIM = `<script>
       return new Response(response.body.pipeThrough(new DecompressionStream("gzip")), {
         status: response.status,
         statusText: response.statusText,
-        headers: { "Content-Type": type },
+        headers: { "Content-Type": "application/octet-stream" },
       });
     });
   };
@@ -143,12 +214,14 @@ const SHIM_ANCHOR = "<script>";
 
 // GitHub Pages runs Jekyll over this site, and Jekyll leaves out any path segment that starts with
 // "_" (the export's "__global_data" folder, for one), so stored names drop those underscores.
+// The .mgz volumes are compressed already, and JSON stays readable in a diff since Pages gzips it on
+// the wire anyway; only the binary surface files are stored gzip-compressed.
 export function storedPath(path: string): string {
   const visible = path
     .split("/")
     .map((segment) => segment.replace(/^_+/, ""))
     .join("/");
-  return visible.endsWith(".mgz") ? visible : `${visible}.gz`;
+  return /\.(mgz|json)$/.test(visible) ? visible : `${visible}.gz`;
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -251,7 +324,8 @@ export function dropSurfaces(configText: string, types: readonly string[]): { co
   const droppedGroups = new Set(dropped.map((group) => group.name));
   const droppedPaths = [...new Set(dropped.flatMap(groupFiles))].filter((path) => !keptFiles.has(path));
   const geoms = config.geoms.filter((geom) => !droppedGroups.has(geom.group?.group_name ?? ""));
-  return { config: JSON.stringify({ ...config, groups: kept, geoms }), droppedPaths };
+  const ending = configText.endsWith("\n") ? "\n" : "";
+  return { config: JSON.stringify({ ...config, groups: kept, geoms }) + ending, droppedPaths };
 }
 
 // Rather than edit the export's config, the split writes a trimmed copy beside it and points the

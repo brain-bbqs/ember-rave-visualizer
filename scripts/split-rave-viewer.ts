@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // Splits a self-contained RAVE viewer export into public/vendor/rave: the page, its data files
-// (gzip-compressed apart from .mgz, without the surface types in DROPPED_SURFACE_TYPES) and a
+// (gzip-compressed apart from .mgz and .json, without the surface types in DROPPED_SURFACE_TYPES) and a
 // manifest that lets tests check every shipped file against the export.
 // Usage: node scripts/split-rave-viewer.ts <viewer-export.html> [output-dir]
 import { createHash } from "node:crypto";

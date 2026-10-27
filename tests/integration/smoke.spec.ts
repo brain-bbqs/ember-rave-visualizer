@@ -22,7 +22,7 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(page.locator("#dropzone")).toBeVisible();
     await expect(page.locator("#viewer-card")).toBeVisible();
     await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
-    await expect(page.locator(".footer-credit")).toContainText("three-brain-js");
+    await expect(page.locator(".viewer-credit")).toContainText("three-brain-js");
   });
 
   test("loads and removes a dropped local electrode table", async ({ page }) => {

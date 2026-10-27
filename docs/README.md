@@ -24,10 +24,10 @@ npm run dev
 ## Updating the vendored viewer
 
 `public/vendor/rave/` holds RAVE's MNI152 viewer, split out of the self-contained HTML export RAVE writes.
-The export embeds its template data as about 57 MB of base64; the split keeps the page to 2.6 MB and stores the data as separate files in `data/`, gzip-compressed apart from the `.mgz` volumes.
+The export embeds its template data as about 57 MB of base64; the split keeps the page to 2.6 MB and stores the data as separate files in `data/`, gzip-compressed apart from the JSON files (which Pages compresses on the wire) and the `.mgz` volumes (which are compressed already).
 Stored names also drop leading underscores (`__global_data` becomes `global_data`), because Jekyll on GitHub Pages leaves such paths out of the site.
 The surface types in `DROPPED_SURFACE_TYPES` (`scripts/raveViewerData.ts`) are left out altogether: the page loads a trimmed copy of the export's config, `ember-config_….json`, that no longer lists them.
-A short script the split adds to the page maps the engine's requests to the stored files and inflates them as they arrive.
+A short script the split adds to the page maps the engine's requests to the stored files and inflates the compressed ones as they arrive.
 
 To replace the viewer, split the new export with Node 22.18 or later, which runs the TypeScript directly:
 

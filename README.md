@@ -18,6 +18,8 @@ Tables are tab-separated (`.tsv`) by default, and comma-separated (`.csv`) files
 Each row is one electrode contact, with its MNI152 coordinates in millimetres.
 The column names are case-sensitive, and extra columns are allowed:
 
+<div align="center">
+
 | Electrode | MNI152_x | MNI152_y | MNI152_z | Label |
 | --------: | -------: | -------: | -------: | ----- |
 |         1 |      -22 |       -5 |      -18 | LA1   |
@@ -25,7 +27,9 @@ The column names are case-sensitive, and extra columns are allowed:
 |         3 |      -32 |       -5 |      -18 | LA3   |
 |         4 |      -28 |      -22 |      -13 | LH1   |
 
-[Download example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try the app with nine contacts in the left amygdala and both hippocampi, or paste that link into the app's **Remote URL** tab.
+</div>
+
+[Download example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try the app with nine contacts in the left amygdala and both hippocampi, or paste that link into the app's **Load from a URL** tab.
 
 ---
 

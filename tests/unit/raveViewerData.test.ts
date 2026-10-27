@@ -123,8 +123,8 @@ describe("storedPath", () => {
   it.each([
     ["subject/mri/brain.mgz", "subject/mri/brain.mgz"],
     ["subject/surf/lh.pial", "subject/surf/lh.pial.gz"],
-    ["config.json", "config.json.gz"],
-    ["__global_data/lut.json", "global_data/lut.json.gz"],
+    ["config.json", "config.json"],
+    ["__global_data/lut.json", "global_data/lut.json"],
     ["_subject/mri/_brain.mgz", "subject/mri/brain.mgz"],
   ])("stores %s as %s", (path, stored) => {
     expect(storedPath(path)).toBe(stored);
@@ -161,6 +161,13 @@ describe("dropSurfaces", () => {
     expect(parsed.groups.map((group) => group.name)).toEqual(["__global_data", "Surface - pial"]);
     expect(parsed.geoms.map((geom) => geom.name)).toEqual(["pial", "blank"]);
     expect(droppedPaths).toEqual(["subject/surf/lh.inflated"]);
+  });
+
+  it.each([
+    ["keeps", `${CONFIG}\n`, true],
+    ["adds no", CONFIG.trimEnd(), false],
+  ])("%s trailing newline as the original config does", (_, original, newline) => {
+    expect(dropSurfaces(original, ["inflated"]).config.endsWith("}\n")).toBe(newline);
   });
 
   it("refuses a surface type the config does not have", () => {

@@ -20,28 +20,28 @@
       "type": "application/json",
       "size": 15819,
       "sha256": "3dee86f7b9c8bbd2e2a73abc182673f6fda68d3c7ec212aea135c74ac13ed0cd",
-      "stored": "global_data/ContinuousSample.json.gz"
+      "stored": "global_data/ContinuousSample.json"
     },
     {
       "path": "__global_data/FreeSurferColorLUT.json",
       "type": "application/json",
       "size": 101474,
       "sha256": "22d6e626d5b4416d323256cdf020e6ead7171e166c4e3239268de26fcc13a1ff",
-      "stored": "global_data/FreeSurferColorLUT.json.gz"
+      "stored": "global_data/FreeSurferColorLUT.json"
     },
     {
       "path": "__global_data/FSColorLUT.json",
       "type": "application/json",
       "size": 101766,
       "sha256": "fd4812300734423556f4c648b6e99c988c5e58b5b68ae3787ab24a533a34701e",
-      "stored": "global_data/FSColorLUT.json.gz"
+      "stored": "global_data/FSColorLUT.json"
     },
     {
       "path": "config_d555c502d103ac9248f03ae2d7c7b75d.json",
       "type": "application/json",
       "size": 24171,
       "sha256": "7705919a3f65d27074a6b742a711ddb75120ac97f05642e2eba1f311c91c2e1b",
-      "stored": "config_d555c502d103ac9248f03ae2d7c7b75d.json.gz"
+      "stored": "config_d555c502d103ac9248f03ae2d7c7b75d.json"
     },
     {
       "path": "cvs_avg35_inMNI152/mri/brain.finalsurfs.mgz",
@@ -125,9 +125,9 @@
     {
       "path": "ember-config_d555c502d103ac9248f03ae2d7c7b75d.json",
       "type": "application/json",
-      "size": 15834,
-      "sha256": "c73e6667e444477ebceda774c4100b9f7c040386a06734a84b2ad18b940acdf0",
-      "stored": "ember-config_d555c502d103ac9248f03ae2d7c7b75d.json.gz"
+      "size": 15835,
+      "sha256": "87b93ecd515e5a96c4609b010ccce7b5775d80cf129ed03756c67e79d9dfa7b4",
+      "stored": "ember-config_d555c502d103ac9248f03ae2d7c7b75d.json"
     }
   ],
   "dropped": [
