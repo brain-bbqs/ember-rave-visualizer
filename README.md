@@ -15,7 +15,6 @@
 Visualize local or remotely hosted electrode-coordinate CSV files on an interactive RAVE MNI152 template brain.
 
 The app expects the case-sensitive columns `Electrode`, `MNI152_x`, `MNI152_y`, `MNI152_z`, and `Label`.
-GitHub `/blob/` URLs are converted to `raw.githubusercontent.com` before download.
 
 ---
 
