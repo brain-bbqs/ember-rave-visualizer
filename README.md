@@ -23,7 +23,7 @@ The app accepts tabular files (`.tsv`/`.csv`) of the following structure:
 |         3 |      -32 |       -5 |      -18 | LA3   |
 |         4 |      -28 |      -22 |      -13 | LH1   |
 
-[Download an example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try out the app with nine contacts in the left amygdala and both hippocampi.
+[Download an example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try out the app with nine contacts in the left amygdala and hippocampus.
 
 ---
 
