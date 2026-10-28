@@ -3,10 +3,12 @@ import {
   DATA_MARKER,
   DECOMPRESSION_SHIM,
   DISTRIBUTED_SETTINGS,
-  dropSurfaces,
   joinViewer,
+  NO_DROPS,
   splitViewer,
   storedPath,
+  trimConfig,
+  type TemplateDrops,
   type ViewerDataFile,
 } from "../../scripts/raveViewerData";
 
@@ -137,9 +139,32 @@ const CONFIG = JSON.stringify({
   groups: [
     { name: "__global_data", cache_name: "__global_data", group_data: { lut: { file_name: "lut.json" } } },
     {
+      name: "Atlas - wmparc (subject)",
+      cache_name: "subject/mri",
+      cached_items: "volume_data",
+      group_data: { volume_data: { file_name: "wmparc.mgz" } },
+    },
+    {
       name: "Surface - pial",
       cache_name: "subject/surf",
-      group_data: { surface_type: "pial", vertices: { file_name: "lh.pial" }, color: { file_name: "lh.sulc" } },
+      cached_items: [
+        "vertices",
+        "color",
+        "lh_annotation_label/aparc.a2009s",
+        "rh_annotation_label/aparc.a2009s",
+        "lh_annotation_label/aparc",
+        "rh_annotation_label/aparc",
+      ],
+      group_data: {
+        surface_type: "pial",
+        vertices: { file_name: "lh.pial" },
+        color: { file_name: "lh.sulc" },
+        annotation_list: ["label/aparc.a2009s", "label/aparc"],
+        "lh_annotation_label/aparc.a2009s": { file_name: "lh.aparc.a2009s.annot" },
+        "rh_annotation_label/aparc.a2009s": { file_name: "rh.aparc.a2009s.annot" },
+        "lh_annotation_label/aparc": { file_name: "lh.aparc.annot" },
+        "rh_annotation_label/aparc": { file_name: "rh.aparc.annot" },
+      },
     },
     {
       name: "Surface - inflated",
@@ -148,34 +173,98 @@ const CONFIG = JSON.stringify({
     },
   ],
   geoms: [
+    { name: "wmparc", group: { group_name: "Atlas - wmparc (subject)" } },
     { name: "pial", group: { group_name: "Surface - pial" } },
     { name: "inflated", group: { group_name: "Surface - inflated" } },
     { name: "blank", group: null },
   ],
 });
 
-describe("dropSurfaces", () => {
+interface ParsedConfig {
+  groups: { name: string; cached_items?: unknown; group_data?: Record<string, unknown> }[];
+  geoms: { name: string }[];
+}
+
+const parse = (text: string): ParsedConfig => JSON.parse(text) as ParsedConfig;
+const drops = (parts: Partial<TemplateDrops>): TemplateDrops => ({ ...NO_DROPS, ...parts });
+const pialOf = (text: string): ParsedConfig["groups"][number] | undefined =>
+  parse(text).groups.find((group) => group.name === "Surface - pial");
+
+describe("trimConfig", () => {
   it("removes a surface type's group and geometries, and reports the files only it used", () => {
-    const { config, droppedPaths } = dropSurfaces(CONFIG, ["inflated"]);
-    const parsed = JSON.parse(config) as { groups: { name: string }[]; geoms: { name: string }[] };
-    expect(parsed.groups.map((group) => group.name)).toEqual(["__global_data", "Surface - pial"]);
-    expect(parsed.geoms.map((geom) => geom.name)).toEqual(["pial", "blank"]);
+    const { config, droppedPaths } = trimConfig(CONFIG, drops({ surfaces: ["inflated"] }));
+    expect(parse(config).groups.map((group) => group.name)).toEqual([
+      "__global_data",
+      "Atlas - wmparc (subject)",
+      "Surface - pial",
+    ]);
+    expect(parse(config).geoms.map((geom) => geom.name)).toEqual(["wmparc", "pial", "blank"]);
     expect(droppedPaths).toEqual(["subject/surf/lh.inflated"]);
+  });
+
+  it("removes an atlas's group and volume, whichever subject its name carries", () => {
+    const { config, droppedPaths } = trimConfig(CONFIG, drops({ atlases: ["wmparc"] }));
+    expect(parse(config).groups.map((group) => group.name)).toEqual([
+      "__global_data",
+      "Surface - pial",
+      "Surface - inflated",
+    ]);
+    expect(parse(config).geoms.map((geom) => geom.name)).toEqual(["pial", "inflated", "blank"]);
+    expect(droppedPaths).toEqual(["subject/mri/wmparc.mgz"]);
+  });
+
+  it("removes an annotation's entry, files and cached items from a surface, keeping its others", () => {
+    const { config, droppedPaths } = trimConfig(CONFIG, drops({ annotations: ["aparc.a2009s"] }));
+    const pial = pialOf(config);
+    expect(Object.keys(pial?.group_data ?? {})).toEqual([
+      "surface_type",
+      "vertices",
+      "color",
+      "annotation_list",
+      "lh_annotation_label/aparc",
+      "rh_annotation_label/aparc",
+    ]);
+    expect(pial?.group_data?.annotation_list).toEqual(["label/aparc"]);
+    expect(pial?.cached_items).toEqual(["vertices", "color", "lh_annotation_label/aparc", "rh_annotation_label/aparc"]);
+    expect(droppedPaths).toEqual(["subject/surf/lh.aparc.a2009s.annot", "subject/surf/rh.aparc.a2009s.annot"]);
+  });
+
+  it("removes a surface's annotation list along with its only entry, whatever shape cached_items has", () => {
+    const single = CONFIG.replace('["label/aparc.a2009s","label/aparc"]', '"label/aparc.a2009s"').replace(
+      /"cached_items":\["vertices"[^\]]*\]/,
+      '"cached_items":"vertices"',
+    );
+    const pial = pialOf(trimConfig(single, drops({ annotations: ["aparc.a2009s"] })).config);
+    expect(pial?.group_data).not.toHaveProperty("annotation_list");
+    expect(pial?.group_data).not.toHaveProperty(["lh_annotation_label/aparc.a2009s"]);
+    expect(pial?.cached_items).toBe("vertices");
+  });
+
+  it("drops every kind of part at once", () => {
+    const all = drops({ surfaces: ["inflated"], atlases: ["wmparc"], annotations: ["aparc.a2009s", "aparc"] });
+    const { config, droppedPaths } = trimConfig(CONFIG, all);
+    expect(parse(config).groups.map((group) => group.name)).toEqual(["__global_data", "Surface - pial"]);
+    expect(pialOf(config)?.cached_items).toEqual(["vertices", "color"]);
+    expect(droppedPaths).toHaveLength(6);
   });
 
   it.each([
     ["keeps", `${CONFIG}\n`, true],
     ["adds no", CONFIG.trimEnd(), false],
   ])("%s trailing newline as the original config does", (_, original, newline) => {
-    expect(dropSurfaces(original, ["inflated"]).config.endsWith("}\n")).toBe(newline);
+    expect(trimConfig(original, drops({ surfaces: ["inflated"] })).config.endsWith("}\n")).toBe(newline);
   });
 
-  it("refuses a surface type the config does not have", () => {
-    expect(() => dropSurfaces(CONFIG, ["inflated", "sphere.reg"])).toThrow("no sphere.reg surface to drop");
+  it.each([
+    ["a surface type", { surfaces: ["inflated", "sphere.reg"] }, "no sphere.reg surface to drop"],
+    ["an atlas", { atlases: ["aseg"] }, "no aseg atlas to drop"],
+    ["an annotation", { annotations: ["aparc.DKTatlas"] }, "no aparc.DKTatlas annotation to drop"],
+  ])("refuses %s the config does not have", (_, parts, message) => {
+    expect(() => trimConfig(CONFIG, drops(parts))).toThrow(message);
   });
 });
 
-describe("splitViewer with dropped surfaces", () => {
+describe("splitViewer with dropped parts", () => {
   const PAGE = SPLIT_HTML.replace('{"x":{', '{"x":{"data_filename":"ember-config.json",');
   const SETTINGS = { ...ORIGINAL_SETTINGS, data_filename: "config.json" };
   const ALL_FILES: ViewerDataFile[] = [
@@ -186,13 +275,14 @@ describe("splitViewer with dropped surfaces", () => {
     { path: "subject/surf/lh.sulc", type: "application/octet-stream", bytes: bytes(20, 5) },
   ];
   const KEPT_FILES = ALL_FILES.filter((file) => file.path !== "subject/surf/lh.inflated");
-  const split = splitViewer(joinViewer(PAGE, ALL_FILES, SETTINGS), ["inflated"]);
+  const DROPS = drops({ surfaces: ["inflated"] });
+  const split = splitViewer(joinViewer(PAGE, ALL_FILES, SETTINGS), DROPS);
 
   it("ships every other file unchanged and points the widget at a trimmed copy of the config", () => {
     expect(split.files).toEqual(KEPT_FILES);
     expect(split.dropped.map((file) => file.path)).toEqual(["subject/surf/lh.inflated"]);
     expect(split.derived).toEqual([
-      { path: "ember-config.json", type: "application/json", bytes: encode(dropSurfaces(CONFIG, ["inflated"]).config) },
+      { path: "ember-config.json", type: "application/json", bytes: encode(trimConfig(CONFIG, DROPS).config) },
     ]);
     expect(split.originalSettings).toEqual(SETTINGS);
     expect(split.html).toBe(PAGE);
@@ -211,6 +301,6 @@ describe("splitViewer with dropped surfaces", () => {
       "does not embed subject/surf/lh.inflated",
     ],
   ])("rejects %s", (_, files, message) => {
-    expect(() => splitViewer(joinViewer(PAGE, files, SETTINGS), ["inflated"])).toThrow(message);
+    expect(() => splitViewer(joinViewer(PAGE, files, SETTINGS), DROPS)).toThrow(message);
   });
 });

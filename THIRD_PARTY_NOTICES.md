@@ -5,8 +5,8 @@
 The RAVE MNI152 viewer in `public/vendor/rave/` was supplied as one self-contained HTML export.
 That export's SHA-256 digest was `936f3ff65ae9af758437696932c26f8176f5afdbd88760a8b5da7c42bf6583e4`.
 `scripts/split-rave-viewer.ts` split it into the page `RAVE_MNI_template.html` and the data files it embedded, which now sit in `data/`, gzip-compressed apart from the JSON files and the `.mgz` volumes.
-The split leaves out the template's inflated and spherical (`sphere.reg`) surfaces, four of the 19 files, which this app does not use.
-`manifest.json` records each data file's original size and digest (the dropped ones included) and the widget settings the split changed, and `tests/unit/vendorIntegrity.test.ts` rebuilds the supplied export, minus the four dropped files, byte for byte.
+The split leaves out nine of the 19 files, the parts of the template this app does not use: the inflated, spherical (`sphere.reg`) and smoothed outer pial surfaces, the `wmparc` atlas and the `aparc.a2009s` surface annotation.
+`manifest.json` records each data file's original size and digest (the dropped ones included) and the widget settings the split changed, and `tests/unit/vendorIntegrity.test.ts` rebuilds the supplied export, minus the nine dropped files, byte for byte.
 
 The bundled RAVE/three-brain-js engine is licensed under the Mozilla Public License 2.0.
 The widget identifies its runtime as `three-brain-1.0.0`.
@@ -18,7 +18,7 @@ This app changes four of the generated widget's settings and adds one short scri
 - `custom_javascript` holds an adapter that exposes the initialized viewer, hides the engine's original upload control, collapses the control panel's sections, extends the main view under the control panel, centres the brain between the slice panels and the control panel, moves the axis compass and scale bar to the bottom-right corner, and announces readiness to the parent page.
 - `cache_folder` points the engine at `data/` instead of the copies embedded in the page.
 - `worker_script` is `null`, because no worker matching this engine build ships with the viewer.
-- `data_filename` points at `ember-config_….json`, a copy of the export's config without the dropped surfaces; the original config ships unchanged beside it.
+- `data_filename` points at `ember-config_….json`, a copy of the export's config without the dropped parts; the original config ships unchanged beside it.
 - The added script maps the engine's requests to the stored data files and inflates the compressed ones as they arrive.
 
 ## MNI152 template data

@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // Splits a self-contained RAVE viewer export into public/vendor/rave: the page, its data files
-// (gzip-compressed apart from .mgz and .json, without the surface types in DROPPED_SURFACE_TYPES) and a
+// (gzip-compressed apart from .mgz and .json, without the template parts in DROPPED_PARTS) and a
 // manifest that lets tests check every shipped file against the export.
 // Usage: node scripts/split-rave-viewer.ts <viewer-export.html> [output-dir]
 import { createHash } from "node:crypto";
@@ -9,7 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
 import {
   DATA_FOLDER,
-  DROPPED_SURFACE_TYPES,
+  DROPPED_PARTS,
   splitViewer,
   storedPath,
   type ViewerDataFile,
@@ -31,7 +31,7 @@ if (!input) {
 }
 
 const exportBytes = readFileSync(input);
-const split = splitViewer(exportBytes.toString("utf8"), DROPPED_SURFACE_TYPES);
+const split = splitViewer(exportBytes.toString("utf8"), DROPPED_PARTS);
 const dataDir = resolve(output, DATA_FOLDER);
 rmSync(dataDir, { recursive: true, force: true });
 
@@ -45,7 +45,7 @@ writeFileSync(resolve(output, "RAVE_MNI_template.html"), split.html);
 const manifest: ViewerManifest = {
   source: { sha256: sha256(exportBytes), trimmedSha256: sha256(split.trimmedExport) },
   dataFolder: DATA_FOLDER,
-  droppedSurfaceTypes: [...DROPPED_SURFACE_TYPES],
+  droppedParts: DROPPED_PARTS,
   originalSettings: split.originalSettings,
   files: split.files.map((file) => ({ ...describe(file), stored: storedPath(file.path) })),
   derived: split.derived.map((file) => ({ ...describe(file), stored: storedPath(file.path) })),

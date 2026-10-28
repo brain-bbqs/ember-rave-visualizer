@@ -1,13 +1,22 @@
 {
   "source": {
     "sha256": "936f3ff65ae9af758437696932c26f8176f5afdbd88760a8b5da7c42bf6583e4",
-    "trimmedSha256": "10535a71fbd5afff9b871c1a5f022c63104c9a967786bbb2a1445808ff7cf224"
+    "trimmedSha256": "e0fa5931c001d3946bd6aa0c1c634743c6d06b2f26fcb701eb81bb27f40ac3ce"
   },
   "dataFolder": "data/",
-  "droppedSurfaceTypes": [
-    "inflated",
-    "sphere.reg"
-  ],
+  "droppedParts": {
+    "surfaces": [
+      "inflated",
+      "sphere.reg",
+      "pial-outer-smoothed"
+    ],
+    "atlases": [
+      "wmparc"
+    ],
+    "annotations": [
+      "aparc.a2009s"
+    ]
+  },
   "originalSettings": {
     "cache_folder": "#",
     "worker_script": "lib/three-brain-1.0.0/threebrain-worker.js",
@@ -58,32 +67,11 @@
       "stored": "cvs_avg35_inMNI152/mri/brainmask.mgz"
     },
     {
-      "path": "cvs_avg35_inMNI152/mri/wmparc.mgz",
-      "type": "application/octet-stream",
-      "size": 482319,
-      "sha256": "f94c40a55b3259c17d707c56f7efd9061342d4ee5d20d2ca7b8cc3d4e27c2a04",
-      "stored": "cvs_avg35_inMNI152/mri/wmparc.mgz"
-    },
-    {
-      "path": "cvs_avg35_inMNI152/surf/lh.aparc.a2009s.annot",
-      "type": "application/octet-stream",
-      "size": 1102740,
-      "sha256": "1641064062a924e4e71d64dce12aa20be0fc0696de1131d11af1157a1710aad8",
-      "stored": "cvs_avg35_inMNI152/surf/lh.aparc.a2009s.annot.gz"
-    },
-    {
       "path": "cvs_avg35_inMNI152/surf/lh.pial",
       "type": "application/octet-stream",
       "size": 4948669,
       "sha256": "752e5a5e0f4fa00a807b44b252bc41035fff5ba8f298af509f6a0a0982da9025",
       "stored": "cvs_avg35_inMNI152/surf/lh.pial.gz"
-    },
-    {
-      "path": "cvs_avg35_inMNI152/surf/lh.pial-outer-smoothed",
-      "type": "application/octet-stream",
-      "size": 2724339,
-      "sha256": "fdb6d71062cb4ffa21d8767341830fa45f9a2a8590989b4bfe4acc3bdd34da57",
-      "stored": "cvs_avg35_inMNI152/surf/lh.pial-outer-smoothed.gz"
     },
     {
       "path": "cvs_avg35_inMNI152/surf/lh.sulc",
@@ -93,25 +81,11 @@
       "stored": "cvs_avg35_inMNI152/surf/lh.sulc.gz"
     },
     {
-      "path": "cvs_avg35_inMNI152/surf/rh.aparc.a2009s.annot",
-      "type": "application/octet-stream",
-      "size": 1072564,
-      "sha256": "f3b8b90a85fa4798f0858a5dd497ad10429873ae1f8b9a26d7bc3d26c7e64b3f",
-      "stored": "cvs_avg35_inMNI152/surf/rh.aparc.a2009s.annot.gz"
-    },
-    {
       "path": "cvs_avg35_inMNI152/surf/rh.pial",
       "type": "application/octet-stream",
       "size": 4812877,
       "sha256": "481109d88570d6d06ca8151f4e038d7ced0ab241f688fac6df6dd3a55ebaac48",
       "stored": "cvs_avg35_inMNI152/surf/rh.pial.gz"
-    },
-    {
-      "path": "cvs_avg35_inMNI152/surf/rh.pial-outer-smoothed",
-      "type": "application/octet-stream",
-      "size": 2660115,
-      "sha256": "ef07a0206e1273c2f89e4b00bc1e5d4e231818968e9bb067f5a6aaa12f4ed005",
-      "stored": "cvs_avg35_inMNI152/surf/rh.pial-outer-smoothed.gz"
     },
     {
       "path": "cvs_avg35_inMNI152/surf/rh.sulc",
@@ -125,17 +99,35 @@
     {
       "path": "ember-config_d555c502d103ac9248f03ae2d7c7b75d.json",
       "type": "application/json",
-      "size": 15835,
-      "sha256": "87b93ecd515e5a96c4609b010ccce7b5775d80cf129ed03756c67e79d9dfa7b4",
+      "size": 9200,
+      "sha256": "43809460e69b9a62a8582ff98a4586a267b5f32d3c59bfaa34be04a6e879b559",
       "stored": "ember-config_d555c502d103ac9248f03ae2d7c7b75d.json"
     }
   ],
   "dropped": [
     {
+      "path": "cvs_avg35_inMNI152/mri/wmparc.mgz",
+      "type": "application/octet-stream",
+      "size": 482319,
+      "sha256": "f94c40a55b3259c17d707c56f7efd9061342d4ee5d20d2ca7b8cc3d4e27c2a04"
+    },
+    {
+      "path": "cvs_avg35_inMNI152/surf/lh.aparc.a2009s.annot",
+      "type": "application/octet-stream",
+      "size": 1102740,
+      "sha256": "1641064062a924e4e71d64dce12aa20be0fc0696de1131d11af1157a1710aad8"
+    },
+    {
       "path": "cvs_avg35_inMNI152/surf/lh.inflated",
       "type": "application/octet-stream",
       "size": 4949437,
       "sha256": "ac1b17297df08e302f9c2ddd9aeca4ca087f4c886fbc91a197a5a08598709f9b"
+    },
+    {
+      "path": "cvs_avg35_inMNI152/surf/lh.pial-outer-smoothed",
+      "type": "application/octet-stream",
+      "size": 2724339,
+      "sha256": "fdb6d71062cb4ffa21d8767341830fa45f9a2a8590989b4bfe4acc3bdd34da57"
     },
     {
       "path": "cvs_avg35_inMNI152/surf/lh.sphere.reg",
@@ -144,10 +136,22 @@
       "sha256": "0ec9010b77dc13e74331f8734f78d0b81688f34e864f3289f79ee7473431b81f"
     },
     {
+      "path": "cvs_avg35_inMNI152/surf/rh.aparc.a2009s.annot",
+      "type": "application/octet-stream",
+      "size": 1072564,
+      "sha256": "f3b8b90a85fa4798f0858a5dd497ad10429873ae1f8b9a26d7bc3d26c7e64b3f"
+    },
+    {
       "path": "cvs_avg35_inMNI152/surf/rh.inflated",
       "type": "application/octet-stream",
       "size": 4813645,
       "sha256": "8558642a71324c3fa1fee33769c08b7d9d5fe45f060c0c86a5d7505e35960e24"
+    },
+    {
+      "path": "cvs_avg35_inMNI152/surf/rh.pial-outer-smoothed",
+      "type": "application/octet-stream",
+      "size": 2660115,
+      "sha256": "ef07a0206e1273c2f89e4b00bc1e5d4e231818968e9bb067f5a6aaa12f4ed005"
     },
     {
       "path": "cvs_avg35_inMNI152/surf/rh.sphere.reg",

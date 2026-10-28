@@ -7,10 +7,10 @@ import {
   DATA_MARKER,
   DECOMPRESSION_SHIM,
   DISTRIBUTED_SETTINGS,
-  DROPPED_SURFACE_TYPES,
-  dropSurfaces,
+  DROPPED_PARTS,
   joinViewer,
   storedPath,
+  trimConfig,
   type ViewerManifest,
 } from "../../scripts/raveViewerData";
 
@@ -47,11 +47,11 @@ describe("vendored RAVE viewer", () => {
     }
   });
 
-  it("drops only the configured surface types, through a trimmed copy of the export's config", () => {
-    expect(manifest.droppedSurfaceTypes).toEqual(DROPPED_SURFACE_TYPES);
+  it("drops only the configured template parts, through a trimmed copy of the export's config", () => {
+    expect(manifest.droppedParts).toEqual(DROPPED_PARTS);
     const configPath = manifest.originalSettings.data_filename as string;
     const original = new TextDecoder().decode(readDataFile(storedPath(configPath)));
-    const { config, droppedPaths } = dropSurfaces(original, DROPPED_SURFACE_TYPES);
+    const { config, droppedPaths } = trimConfig(original, DROPPED_PARTS);
 
     expect(manifest.derived.map((file) => file.path)).toEqual([`ember-${configPath}`]);
     expect(new TextDecoder().decode(readDataFile(manifest.derived[0].stored))).toBe(config);
