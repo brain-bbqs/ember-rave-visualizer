@@ -80,100 +80,65 @@
       </header>
 
       <p class="site-subtitle">
-        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain.</span>
+        <span>Visualize intracranial electrode locations on an interactive MNI152 template brain</span>
       </p>
 
       <section class="card load-card" id="load-card" aria-labelledby="load-heading">
-        <div class="card-heading load-heading-row">
-          <div>
-            <h2 id="load-heading">Load electrode coordinates</h2>
-            <p class="card-note">Choose a local CSV file or fetch one from a public URL.</p>
+        <h2 id="load-heading" class="sr-only">Load electrode coordinates</h2>
+        <!-- clip-extractor's top row: equal side slots keep the source picker centred on the card. -->
+        <div class="card-toprow">
+          <div class="toprow-slot"></div>
+          <!-- Each source is marked by what it reads from, as in clip-extractor; the marks are
+               decorative, since the label beside each already names it. -->
+          <div id="source-tabs" class="seg source-seg" role="group" aria-label="Electrode table source">
+            <button type="button" id="source-local-btn" class="active" aria-pressed="true">
+              <span class="seg-icon" aria-hidden="true">📁</span>Load local file
+            </button>
+            <button
+              type="button"
+              id="source-ember-btn"
+              aria-pressed="false"
+              disabled
+              title="EMBER sign-in and archive browsing will be added in a follow-up"
+            >
+              <img class="seg-icon" src="/src/assets/ember-mark.svg" alt="" width="12" height="15" />Browse EMBER
+              <span class="badge upload">Coming soon</span>
+            </button>
+            <button type="button" id="source-url-btn" aria-pressed="false">
+              <span class="seg-icon" aria-hidden="true">🔗</span>Load from a URL
+            </button>
           </div>
-          <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
-        </div>
-
-        <div id="source-tabs" class="source-tabs" role="group" aria-label="Electrode CSV source">
-          <button type="button" id="source-local-btn" class="primary" aria-pressed="true">
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <path d="M3 7h5l2 2h11v10H3z" />
-              <path d="M3 7V5h6l2 2" />
-            </svg>
-            Local file
-          </button>
-          <button type="button" id="source-url-btn" aria-pressed="false">
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" />
-              <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
-            </svg>
-            Remote URL
-          </button>
-          <button
-            type="button"
-            id="source-ember-btn"
-            aria-pressed="false"
-            disabled
-            title="EMBER sign-in and archive browsing will be added in a follow-up"
-          >
-            EMBER
-            <span class="badge upload">Coming soon</span>
-          </button>
+          <div class="toprow-slot toprow-end">
+            <button type="button" id="clear-electrodes-btn" class="small ghost" hidden>Remove electrodes</button>
+          </div>
         </div>
 
         <div id="local-source-pane" class="source-pane">
           <div id="dropzone" class="dropzone">
             <div class="dz-inner">
-              <div class="dz-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="38"
-                  height="38"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  aria-hidden="true"
-                >
-                  <path d="M4 3h11l5 5v13H4z" />
-                  <path d="M15 3v5h5M8 13h8M8 17h8" />
-                </svg>
-              </div>
+              <div class="dz-icon"><span aria-hidden="true">📋</span></div>
               <p>
-                Drop an electrode CSV here, or
-                <button type="button" id="browse-file-btn" class="dz-browse">browse for a file</button>.
+                Drop a table here, or click to browse
+                <button type="button" id="browse-file-btn" class="dz-browse">files</button>.
               </p>
-              <p class="dz-hint">The file is read locally and never uploaded.</p>
+              <p class="dz-hint">The file is only loaded locally and is never uploaded to EMBER.</p>
               <p id="dropzone-reject" class="dz-reject" hidden></p>
             </div>
-            <input type="file" id="file-input" accept=".csv,text/csv" hidden />
+            <input type="file" id="file-input" accept=".tsv,.csv,text/tab-separated-values,text/csv" hidden />
           </div>
         </div>
 
         <div id="url-source-pane" class="source-pane" hidden>
           <form id="url-form" class="url-row">
-            <label class="sr-only" for="url-input">Public electrode CSV URL</label>
+            <label class="sr-only" for="url-input">Public electrode table URL</label>
             <input
               type="url"
               id="url-input"
-              placeholder="https://github.com/…/blob/…/electrodes.csv"
+              placeholder="https://github.com/…/blob/…/electrodes.tsv"
               autocomplete="url"
               required
             />
-            <button type="submit" id="load-url-btn" class="primary">Load CSV</button>
+            <button type="submit" id="load-url-btn" class="primary">Load table</button>
           </form>
           <p class="dz-hint">GitHub <code>/blob/</code> links are automatically converted to raw download URLs.</p>
         </div>
@@ -181,57 +146,7 @@
         <div id="load-status" class="load-status" role="status" aria-live="polite" hidden></div>
       </section>
 
-      <section class="card viewer-card" id="viewer-card" aria-labelledby="viewer-heading">
-        <div class="card-heading">
-          <div>
-            <h2 id="viewer-heading">MNI152 electrode viewer</h2>
-            <p class="card-note">
-              Rotate, zoom, inspect slices, and adjust RAVE display controls in the embedded viewer.
-            </p>
-          </div>
-          <div class="viewer-heading-actions">
-            <span class="badge upload">RAVE</span>
-            <button
-              type="button"
-              id="viewer-fullscreen-btn"
-              class="small ghost viewer-fullscreen-btn"
-              aria-label="View MNI152 viewer full screen"
-              aria-pressed="false"
-              title="View MNI152 viewer full screen"
-            >
-              <svg
-                class="viewer-fullscreen-enter-icon"
-                viewBox="0 0 24 24"
-                width="17"
-                height="17"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
-              </svg>
-              <svg
-                class="viewer-fullscreen-exit-icon"
-                viewBox="0 0 24 24"
-                width="17"
-                height="17"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5" />
-              </svg>
-              <span class="viewer-fullscreen-enter-label">Full screen</span>
-              <span class="viewer-fullscreen-exit-label">Exit full screen</span>
-            </button>
-          </div>
-        </div>
+      <section class="viewer-card" id="viewer-card" aria-label="RAVE MNI152 electrode viewer">
         <div id="viewer-frame-shell" class="viewer-frame-shell">
           <div id="viewer-loading" class="viewer-loading" role="status">Preparing the RAVE viewer…</div>
           <div id="viewer-test-placeholder" class="viewer-test-placeholder" hidden>Deterministic test viewer</div>
@@ -242,7 +157,45 @@
             data-src="./vendor/rave/RAVE_MNI_template.html"
             allow="fullscreen"
           ></iframe>
+          <button
+            type="button"
+            id="viewer-fullscreen-btn"
+            class="small viewer-fullscreen-btn"
+            aria-label="View MNI152 viewer full screen"
+            aria-pressed="false"
+            title="View MNI152 viewer full screen"
+          >
+            <svg
+              class="viewer-fullscreen-enter-icon"
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+            </svg>
+            <svg
+              class="viewer-fullscreen-exit-icon"
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5" />
+            </svg>
+          </button>
         </div>
+        <!-- Attribution under the map's corner, as web maps credit their tiles. -->
         <p class="viewer-credit">
           Viewer engine by the
           <a href="https://rave.wiki/" target="_blank" rel="noopener">RAVE project</a> and

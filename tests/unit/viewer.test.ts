@@ -33,7 +33,7 @@ describe("createViewerBridge", () => {
     const bridge = createViewerBridge(frame);
     const file = new File(["csv"], "subject.csv");
     await expect(bridge.whenReady()).resolves.toBeUndefined();
-    await bridge.loadCsv(file);
+    await bridge.loadTable(file);
     expect(app.fileLoader.loadFromResponse).toHaveBeenCalledWith(file);
     expect(app.handleFileData).toHaveBeenCalledWith({ parsed: true }, "subject.csv", { clearFirst: true });
   });
@@ -41,7 +41,7 @@ describe("createViewerBridge", () => {
   it("reports a table RAVE does not recognize as electrode coordinates", async () => {
     const { frame } = setup(raveApp(false));
     const bridge = createViewerBridge(frame);
-    await expect(bridge.loadCsv(new File(["csv"], "other.csv"))).rejects.toThrow("did not recognize");
+    await expect(bridge.loadTable(new File(["csv"], "other.csv"))).rejects.toThrow("did not recognize");
   });
 
   it("clears the target subject and updates the canvas", async () => {
@@ -134,7 +134,7 @@ describe("createViewerBridge", () => {
     const { frame, viewerWindow } = setup();
     const bridge = createViewerBridge(frame);
     delete (viewerWindow as Window & { raveViewerApp?: unknown }).raveViewerApp;
-    await expect(bridge.loadCsv(new File(["csv"], "subject.csv"))).rejects.toThrow("viewer is unavailable");
+    await expect(bridge.loadTable(new File(["csv"], "subject.csv"))).rejects.toThrow("viewer is unavailable");
   });
 
   it("times out an operation if the viewer never registers", async () => {
@@ -143,7 +143,7 @@ describe("createViewerBridge", () => {
       const frame = document.createElement("iframe");
       document.body.appendChild(frame);
       const bridge = createViewerBridge(frame);
-      const result = expect(bridge.loadCsv(new File(["csv"], "subject.csv"))).rejects.toThrow(
+      const result = expect(bridge.loadTable(new File(["csv"], "subject.csv"))).rejects.toThrow(
         "did not become ready in time",
       );
       await vi.advanceTimersByTimeAsync(60_000);

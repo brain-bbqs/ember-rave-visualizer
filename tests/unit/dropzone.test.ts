@@ -56,14 +56,17 @@ describe("initDropzone", () => {
     expect(click).toHaveBeenCalledTimes(2);
   });
 
-  it("accepts a picked CSV and clears the input so it can be selected again", () => {
-    const { input, onFile } = setup();
-    const file = new File(["csv"], "subject.CSV");
-    setInputFiles(input, [file]);
-    input.dispatchEvent(new Event("change"));
-    expect(onFile).toHaveBeenCalledWith(file);
-    expect(input.value).toBe("");
-  });
+  it.each(["subject.TSV", "subject.CSV"])(
+    "accepts a picked %s and clears the input to allow picking it again",
+    (name) => {
+      const { input, onFile } = setup();
+      const file = new File(["table"], name);
+      setInputFiles(input, [file]);
+      input.dispatchEvent(new Event("change"));
+      expect(onFile).toHaveBeenCalledWith(file);
+      expect(input.value).toBe("");
+    },
+  );
 
   it("ignores a picker change with no file", () => {
     const { input, onFile } = setup();
@@ -72,12 +75,12 @@ describe("initDropzone", () => {
     expect(onFile).not.toHaveBeenCalled();
   });
 
-  it("rejects non-CSV files from both picking and dropping", () => {
+  it("rejects non-table files from both picking and dropping", () => {
     const { dropzone, input, reject, onFile } = setup();
     const textFile = new File(["text"], "notes.txt");
     setInputFiles(input, [textFile]);
     input.dispatchEvent(new Event("change"));
-    expect(reject.textContent).toContain("name ends in .csv");
+    expect(reject.textContent).toContain("name ends in .tsv or .csv");
     expect(reject.querySelectorAll("br")).toHaveLength(2);
 
     reject.hidden = true;
@@ -88,8 +91,8 @@ describe("initDropzone", () => {
 
   it("rejects a multi-file drop instead of silently choosing one", () => {
     const { dropzone, reject, onFile } = setup();
-    drop(dropzone, transfer([new File(["a"], "a.csv"), new File(["b"], "b.csv")]));
-    expect(reject.textContent).toContain("one CSV at a time");
+    drop(dropzone, transfer([new File(["a"], "a.tsv"), new File(["b"], "b.tsv")]));
+    expect(reject.textContent).toContain("one table at a time");
     expect(onFile).not.toHaveBeenCalled();
   });
 

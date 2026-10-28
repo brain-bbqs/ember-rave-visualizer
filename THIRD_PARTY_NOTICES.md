@@ -2,20 +2,29 @@
 
 ## RAVE MNI152 viewer
 
-`public/vendor/rave/RAVE_MNI_template.html` was supplied as a self-contained RAVE MNI152 viewer.
-Its original SHA-256 digest was `936f3ff65ae9af758437696932c26f8176f5afdbd88760a8b5da7c42bf6583e4`.
-After adding the adapter described below, the distributed file's SHA-256 digest is `a2778046801ea8392a6a11dd28bf40b0c15627c52b05dfd14a3e69028bf4a54b`.
+The RAVE MNI152 viewer in `public/vendor/rave/` was supplied as one self-contained HTML export.
+That export's SHA-256 digest was `936f3ff65ae9af758437696932c26f8176f5afdbd88760a8b5da7c42bf6583e4`.
+`scripts/split-rave-viewer.ts` split it into the page `RAVE_MNI_template.html` and the data files it embedded, which now sit in `data/`, gzip-compressed apart from the JSON files and the `.mgz` volumes.
+The split leaves out nine of the 19 files, the parts of the template this app does not use: the inflated, spherical (`sphere.reg`) and smoothed outer pial surfaces, the `wmparc` atlas and the `aparc.a2009s` surface annotation.
+`manifest.json` records each data file's original size and digest (the dropped ones included) and the widget settings the split changed, and `tests/unit/vendorIntegrity.test.ts` rebuilds the supplied export, minus the nine dropped files, byte for byte.
 
 The bundled RAVE/three-brain-js engine is licensed under the Mozilla Public License 2.0.
 The widget identifies its runtime as `three-brain-1.0.0`.
 The full terms are in [`LICENSES/MPL-2.0.txt`](LICENSES/MPL-2.0.txt), and the matching 1.0.0 source snapshot is available at [three-brain-js commit `26b73b6`](https://github.com/dipterix/three-brain-js/tree/26b73b661017891c866ae51e9a488a76127dc4d1).
 
 The engine bundle itself is unchanged.
-This app only sets the generated widget's `custom_javascript` adapter to expose the initialized viewer, hide the engine's original upload control, and announce readiness to the parent page.
+This app changes four of the generated widget's settings and adds one short script to the page:
+
+- `custom_javascript` holds an adapter that exposes the initialized viewer, hides the engine's original upload control, collapses the control panel's sections, extends the main view under the control panel, centres the brain between the slice panels and the control panel, moves the axis compass and scale bar to the bottom-right corner, and announces readiness to the parent page.
+- `cache_folder` points the engine at `data/` instead of the copies embedded in the page.
+- `worker_script` is `null`, because no worker matching this engine build ships with the viewer.
+- `data_filename` points at `ember-config_….json`, a copy of the export's config without the dropped parts; the original config ships unchanged beside it.
+- The added script maps the engine's requests to the stored data files and inflates the compressed ones as they arrive.
 
 ## MNI152 template data
 
-The viewer embeds the `cvs_avg35_inMNI152` template brain and related atlas data.
+The viewer's data files include the `cvs_avg35_inMNI152` template brain and related atlas data.
+The binary surface files are stored gzip-compressed, and every file is otherwise unchanged: decompressing gives back the original bytes.
 Those materials are third-party data and are not relicensed under this application's MIT license.
 The viewer's creator identified the FreeSurfer software license as the likely applicable license for the template.
 See [`LICENSES/LicenseRef-MNI152-Template.txt`](LICENSES/LicenseRef-MNI152-Template.txt) before redistributing or reusing those data separately.

@@ -1,10 +1,10 @@
 import "./style.css";
 import { initThemeToggle, initWhatsNew, renderVersion } from "@brain-bbqs/ui";
 import changelog from "../CHANGELOG.md?raw";
-import { readElectrodeCsv } from "./lib/electrodeCsv";
-import { fetchRemoteCsv } from "./lib/remoteCsv";
+import { readElectrodeTable } from "./lib/electrodeTable";
+import { fetchRemoteTable } from "./lib/remoteTable";
 import { THEME_KEY } from "./lib/settings";
-import { readTestInjection, synthesizeMockCsv } from "./lib/testInjection";
+import { readTestInjection, synthesizeMockTable } from "./lib/testInjection";
 import { initDropzone } from "./ui/dropzone";
 import { getElements, getShell } from "./ui/elements";
 import { initViewerFullscreen } from "./ui/fullscreen";
@@ -24,7 +24,7 @@ const injection = readTestInjection(window.location.search);
 
 const fakeViewer: ViewerPort = {
   whenReady: () => Promise.resolve(),
-  loadCsv: () => Promise.resolve(),
+  loadTable: () => Promise.resolve(),
   clearElectrodes: () => Promise.resolve(),
   setBackground: () => Promise.resolve(),
   destroy: () => {},
@@ -64,7 +64,7 @@ let remoteRequest: AbortController | null = null;
 let viewerActions = Promise.resolve();
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "The electrode CSV could not be loaded.";
+  return error instanceof Error ? error.message : "The electrode table could not be loaded.";
 }
 
 function electrodeCount(count: number): string {
@@ -77,14 +77,14 @@ function queueViewerAction(action: () => Promise<void>): Promise<void> {
   return pending;
 }
 
-async function loadCsv(file: File, source: string, sequence: number): Promise<void> {
+async function loadTable(file: File, source: string, sequence: number): Promise<void> {
   try {
     renderLoadState(els.loadStatus, els.clearElectrodesBtn, {
       kind: "loading",
       title: `Checking ${file.name}`,
       detail: "Validating MNI152 coordinates before opening them in RAVE.",
     });
-    const summary = await readElectrodeCsv(file);
+    const summary = await readElectrodeTable(file);
     if (sequence !== loadSequence) return;
 
     renderLoadState(els.loadStatus, els.clearElectrodesBtn, {
@@ -94,7 +94,7 @@ async function loadCsv(file: File, source: string, sequence: number): Promise<vo
     });
     await queueViewerAction(async () => {
       if (sequence !== loadSequence) return;
-      await viewer.loadCsv(file);
+      await viewer.loadTable(file);
     });
     if (sequence !== loadSequence) return;
 
@@ -107,7 +107,7 @@ async function loadCsv(file: File, source: string, sequence: number): Promise<vo
     if (sequence !== loadSequence) return;
     renderLoadState(els.loadStatus, els.clearElectrodesBtn, {
       kind: "error",
-      title: "Could not load the electrode CSV",
+      title: "Could not load the electrode table",
       detail: errorMessage(error),
     });
   }
@@ -117,7 +117,7 @@ function loadLocalFile(file: File): void {
   remoteRequest?.abort();
   remoteRequest = null;
   loadSequence += 1;
-  void loadCsv(file, "Local file", loadSequence);
+  void loadTable(file, "Local file", loadSequence);
 }
 
 async function loadRemoteUrl(input: string): Promise<void> {
@@ -127,20 +127,20 @@ async function loadRemoteUrl(input: string): Promise<void> {
   const sequence = loadSequence;
   renderLoadState(els.loadStatus, els.clearElectrodesBtn, {
     kind: "loading",
-    title: "Downloading electrode CSV",
+    title: "Downloading electrode table",
     detail: "GitHub file links are resolved through raw.githubusercontent.com.",
   });
 
   try {
-    const remote = await fetchRemoteCsv(input, remoteRequest.signal);
+    const remote = await fetchRemoteTable(input, remoteRequest.signal);
     if (sequence !== loadSequence) return;
     const host = new URL(remote.downloadUrl).hostname;
-    await loadCsv(remote.file, `Remote URL · ${host}`, sequence);
+    await loadTable(remote.file, `Remote URL · ${host}`, sequence);
   } catch (error) {
     if (sequence !== loadSequence || (error instanceof DOMException && error.name === "AbortError")) return;
     renderLoadState(els.loadStatus, els.clearElectrodesBtn, {
       kind: "error",
-      title: "Could not download the electrode CSV",
+      title: "Could not download the electrode table",
       detail: errorMessage(error),
     });
   }
@@ -160,4 +160,4 @@ els.clearElectrodesBtn.addEventListener("click", () => {
 });
 
 if (injection?.sourceUrl) sourcePicker.select("url");
-if (injection?.mockCsv) loadLocalFile(synthesizeMockCsv());
+if (injection?.mockTable) loadLocalFile(synthesizeMockTable());

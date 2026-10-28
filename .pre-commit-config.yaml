@@ -16,8 +16,11 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-yaml
+      # The vendored viewer's files must stay byte-for-byte what manifest.json records.
       - id: end-of-file-fixer
+        exclude: ^public/vendor/
       - id: trailing-whitespace
+        exclude: ^public/vendor/
 
   - repo: local
     hooks:
