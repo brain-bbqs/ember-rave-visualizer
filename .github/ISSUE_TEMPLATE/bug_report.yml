@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a problem with the Web App Template
+description: Report a problem with the EMBER RAVE Visualizer
 body:
   - type: textarea
     id: description

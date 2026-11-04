@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea or improvement for the Web App Template
+description: Suggest an idea or improvement for the EMBER RAVE Visualizer
 body:
   - type: textarea
     id: solution

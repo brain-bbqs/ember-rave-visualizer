@@ -10,10 +10,6 @@ concurrency: gh-pages-main
 
 jobs:
   deploy:
-    # Never in the template itself, where this would publish a placeholder page under the
-    # placeholder CNAME. A generated app is not this repository, so the condition is true there
-    # and the job runs; leaving the line in costs that app nothing.
-    if: github.repository != 'brain-bbqs/bbqs-web-app-template'
     runs-on: ubuntu-latest
     permissions:
       contents: write

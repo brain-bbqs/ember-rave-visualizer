@@ -9,8 +9,8 @@ jobs:
   chromatic-playwright:
     name: Run Chromatic (Playwright)
     # Dependabot-triggered runs cannot read Actions secrets, so the Chromatic project token is
-    # unavailable; skip instead of failing. The template itself has no Chromatic project either.
-    if: github.actor != 'dependabot[bot]' && github.repository != 'brain-bbqs/bbqs-web-app-template'
+    # unavailable; skip instead of failing.
+    if: github.actor != 'dependabot[bot]'
     # Pinned rather than ubuntu-latest: a runner image bump (system fonts, antialiasing,
     # rasterizer) shifts screenshot pixels on its own, with no code change to explain it.
     runs-on: ubuntu-24.04

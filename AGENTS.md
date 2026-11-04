@@ -1,8 +1,5 @@
 # Agent instructions
 
-Setting up a new app from this template is the `setup-web-app` skill's job, and it is more specific than this file.
-Read it first.
-
 ## What belongs in an app repository
 
 Every BBQS companion app is the same shell around a different job.
@@ -48,7 +45,7 @@ Name the rule, and give just enough of the failure to show why the rule exists.
 - Always bump the version in `package.json` appropriately when any file under `src/`, `configs/`, `index.html`, or `package.json`/`package-lock.json` itself, is changed (`tests/` and `stories/` do not count).
   Bump once per PR: if the version was already bumped by earlier work on the same PR/branch and it hasn't been merged yet, do not bump it again for follow-up commits on that same PR; keep adding entries under the existing top-most `CHANGELOG.md` heading instead.
 - This project has no formal releases, so there is no `## Upcoming` staging section in `CHANGELOG.md`.
-  Leave a short description of the change or addition directly under the top-most version heading (the same version just bumped in `package.json`; create the heading if it does not yet exist) under the appropriate subsection (`#### 🚀 Enhancement`, `#### 🐛 Bug Fix`, or `#### 🏠 Internal`); create the subsection if it does not yet exist; include the GitHub PR link at the end of each entry in the format `([#N](https://github.com/brain-bbqs/web-app-template/pull/N))`.
+  Leave a short description of the change or addition directly under the top-most version heading (the same version just bumped in `package.json`; create the heading if it does not yet exist) under the appropriate subsection (`#### 🚀 Enhancement`, `#### 🐛 Bug Fix`, or `#### 🏠 Internal`); create the subsection if it does not yet exist; include the GitHub PR link at the end of each entry in the format `([#N](https://github.com/brain-bbqs/ember-rave-visualizer/pull/N))`.
 - Keep `CHANGELOG.md` entries to a single sentence each, roughly 25 words or fewer: what changed, from the reader's side.
   Not why, not how, not the reasoning behind it, which belong in the code comments and the PR.
   Prefer a single entry per PR, describing the change as a whole at the level someone using the app would notice; follow-up commits on the same PR should usually revise that entry rather than add another.

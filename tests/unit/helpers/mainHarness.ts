@@ -6,6 +6,20 @@
 // `vi.mock` calls apply to what main.ts imports.
 import { createMainHarness, pickFiles } from "@brain-bbqs/test-utils/vitest";
 
+if (!("text" in File.prototype)) {
+  Object.defineProperty(File.prototype, "text", {
+    configurable: true,
+    value(this: File): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => resolve(String(reader.result ?? "")));
+        reader.addEventListener("error", () => reject(reader.error ?? new Error("Could not read the test file.")));
+        reader.readAsText(this);
+      });
+    },
+  });
+}
+
 export const { bootMain } = createMainHarness({ importMain: () => import("../../../src/main") });
 export { el } from "@brain-bbqs/test-utils/vitest";
 

@@ -12,8 +12,6 @@ concurrency: preview-${{ github.ref }}
 
 jobs:
   deploy-preview:
-    # Never in the template itself (see deploy.yml); true, and so run, in every generated app.
-    if: github.repository != 'brain-bbqs/bbqs-web-app-template'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,5 +40,3 @@ jobs:
         with:
           source-dir: dist
           preview-branch: gh-pages
-          # The custom domain the gh-pages branch is served from; must match public/CNAME.
-          pages-base-url: web-app-template.brain-bbqs.org

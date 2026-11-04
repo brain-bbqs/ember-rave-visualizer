@@ -2,7 +2,7 @@ import { withCard, withTheme } from "./utils";
 
 type DropzoneState = "idle" | "dragover" | "rejected";
 
-// Kept in sync with the dropzone markup in index.html and the refusal text in src/ui/dropzone.ts.
+// Kept in sync with the electrode table dropzone and refusal text.
 function buildDropzone(state: DropzoneState): HTMLElement {
   const dz = document.createElement("div");
   dz.id = "dropzone";
@@ -10,14 +10,14 @@ function buildDropzone(state: DropzoneState): HTMLElement {
   if (state === "dragover") dz.classList.add("dragover");
   dz.innerHTML = `
     <div class="dz-inner">
-      <div class="dz-icon"><span>📄</span></div>
+      <div class="dz-icon"><span aria-hidden="true">📋</span></div>
       <p>
-        Drop a file here, or
-        <button type="button" class="dz-browse">browse for a file</button>.
+        Drop a table here, or click to browse
+        <button type="button" class="dz-browse">files</button>.
       </p>
-      <p class="dz-hint">Nothing leaves your browser: the file is read locally and never uploaded.</p>
+      <p class="dz-hint">The file is only loaded locally and is never uploaded to EMBER.</p>
       <p class="dz-reject" ${state === "rejected" ? "" : "hidden"}>
-        That wasn't a file.<br /><br />Drop a single file, or use the browse button instead.
+        That file is not a table.<br /><br />Choose a file whose name ends in .tsv or .csv.
       </p>
     </div>
   `;
@@ -49,11 +49,11 @@ export const DragOverDark = {
 };
 
 export const RejectedLight = {
-  name: "Not a file rejected (light)",
+  name: "Non-table rejected (light)",
   render: () => withTheme("light", () => buildDropzone("rejected")),
 };
 
 export const RejectedDark = {
-  name: "Not a file rejected (dark)",
+  name: "Non-table rejected (dark)",
   render: () => withTheme("dark", () => buildDropzone("rejected")),
 };
