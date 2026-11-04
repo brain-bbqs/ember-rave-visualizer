@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { MAX_TABLE_BYTES } from "../../src/lib/electrodeTable";
-import { fetchRemoteTable, normalizeRemoteTableUrl, RemoteTableError } from "../../src/lib/remoteTable";
+import {
+  downloadTableFile,
+  fetchRemoteTable,
+  normalizeRemoteTableUrl,
+  RemoteTableError,
+} from "../../src/lib/remoteTable";
 
 const CSV = "Electrode,MNI152_x,MNI152_y,MNI152_z,Label\n1,1,2,3,A1";
 
@@ -135,5 +140,21 @@ describe("fetchRemoteTable", () => {
         vi.fn(async () => response({ text: oversized })),
       ),
     ).rejects.toThrow("larger than the 20 MB limit");
+  });
+});
+
+describe("downloadTableFile", () => {
+  it("sends the headers it is given, and names and types the file by the name it is given", async () => {
+    const fetcher = vi.fn(async () => response());
+    const file = await downloadTableFile("https://bucket.example/blobs/abc", "sub-01_electrodes.tsv", {
+      headers: { Authorization: "Bearer tok" },
+      fetcher,
+    });
+    expect(fetcher).toHaveBeenCalledWith("https://bucket.example/blobs/abc", {
+      signal: undefined,
+      headers: { Authorization: "Bearer tok" },
+    });
+    expect(file.name).toBe("sub-01_electrodes.tsv");
+    expect(file.type).toBe("text/tab-separated-values");
   });
 });

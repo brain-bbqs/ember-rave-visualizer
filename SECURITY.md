@@ -23,7 +23,7 @@ Also keep an eye on:
 
 - **No third-party runtime scripts.** Nothing in `index.html` loads a CDN `<script>` tag.
   A compromised third-party script is the other realistic way a token in storage gets exfiltrated even without a bug in this app's own code, so keep it that way.
-- **Minimal runtime dependencies.** The template ships with none.
+- **Minimal runtime dependencies.** The app's runtime dependencies are the shared `@brain-bbqs/*` packages its sibling apps use.
   Every added runtime dependency is something that could be compromised upstream and ship code that reads `localStorage`; don't add one without a reason.
 
 ## Handling a "clear text storage" alert on a new credential
@@ -48,7 +48,18 @@ A service that needs to look something up does so with its own key, server-side.
 An earlier version of a sibling app forwarded the signed-in user's live access token to a helper host on every page load, which put a credential capable of acting as that user on a machine the repository doesn't control; a unit test now pins the absence of the `Authorization` header on that call.
 Do the same here: if such a service ever needs to know something it can't resolve with its own credentials, change the service, not the header.
 
-## If the app adds sign-in
+## OAuth token lifecycle
 
-Document the token lifecycle in this file when it happens: which grant, how long access tokens live, how and when they are refreshed, and what signing out revokes.
+- Sign-in is Authorization Code + PKCE (`createOAuthClient` from `@brain-bbqs/ember-client`, configured with this app's client id in `src/lib/oauth.ts`) against a public OAuth application on the EMBER archive with no client secret.
+  The PKCE verifier and `state` wait in `sessionStorage` under `ember-rave-visualizer.oauth-pkce.v1` only between the redirect out and the callback back, and `state` is checked before the code is exchanged.
+- The token set (access token, refresh token, expiry) is kept in `localStorage` under `ember-rave-visualizer.settings.v1`, the accepted trade-off described above for a page with no backend.
+- Access tokens use `django-oauth-toolkit`'s default lifetime on the archive.
+  `ensureFreshOAuth()` in `src/main.ts` refreshes one with the refresh token when it is within a minute of expiry, before each archive call it guards, so a visitor is asked to sign in again only when the refresh token itself stops working.
+- Signing out forgets the tokens locally and revokes the access token through `/oauth/revoke_token/` (best effort; the local copy is gone either way).
+- The token is sent only to the archive's API: to read who is signed in, to list the embargoed datasets the visitor owns and their files, and to download one of those files.
+  That download endpoint redirects to a short-lived signed bucket URL, and the browser drops the `Authorization` header at that cross-origin hop.
+  Everything public (the bucket listing, its manifests and files, and the API's anonymous dataset listing) is read without the token.
+- This app has its own registered OAuth application, separate from clip-extractor's and bbqs-uploader's, so any one tool can be revoked without the others.
+  The redirect URI is computed at runtime from `origin + pathname`, so every location the app is served from must be registered on that application (see `docs/README.md`).
+
 The `frontend-security` skill under `.claude/skills/` is the triggerable summary of this file; update both together.
