@@ -5,7 +5,7 @@ import { initSourcePicker } from "../../src/ui/sourcePicker";
 
 function setup() {
   const localButton = document.createElement("button");
-  localButton.className = "primary";
+  localButton.className = "active";
   const urlButton = document.createElement("button");
   const localPane = document.createElement("div");
   const urlPane = document.createElement("div");
@@ -38,8 +38,8 @@ describe("initSourcePicker", () => {
 
     expect(localPane.hidden).toBe(true);
     expect(urlPane.hidden).toBe(false);
-    expect(localButton.classList.contains("primary")).toBe(false);
-    expect(urlButton.classList.contains("primary")).toBe(true);
+    expect(localButton.classList.contains("active")).toBe(false);
+    expect(urlButton.classList.contains("active")).toBe(true);
     expect(localButton.getAttribute("aria-pressed")).toBe("false");
     expect(urlButton.getAttribute("aria-pressed")).toBe("true");
     expect(document.activeElement).toBe(input);

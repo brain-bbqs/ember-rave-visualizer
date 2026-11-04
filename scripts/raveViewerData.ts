@@ -1,0 +1,478 @@
+// Splits a self-contained threeBrain viewer export (the single HTML file RAVE writes) into a light
+// page plus the data files it embeds as base64, optionally leaving out parts of the template it shows,
+// and joins the page and the files it kept back into the export (minus any dropped files) byte for
+// byte.
+
+export interface ViewerDataFile {
+  /** Path inside the data folder, exactly as the export names it. */
+  path: string;
+  /** MIME type the export recorded for the file. */
+  type: string;
+  bytes: Uint8Array;
+}
+
+export interface ViewerManifestFile {
+  path: string;
+  /** Where the file is stored inside the data folder (see {@link storedPath}). */
+  stored: string;
+  type: string;
+  size: number;
+  sha256: string;
+}
+
+export interface ViewerManifest {
+  source: {
+    sha256: string;
+    /** Digest of the export with the dropped files' blocks removed, which {@link joinViewer} rebuilds. */
+    trimmedSha256: string;
+  };
+  dataFolder: string;
+  droppedParts: TemplateDrops;
+  originalSettings: Record<string, unknown>;
+  /** The export's files that ship, in the order it embedded them, which {@link joinViewer} needs. */
+  files: ViewerManifestFile[];
+  /** Files the split writes itself: the config without the dropped parts. */
+  derived: ViewerManifestFile[];
+  /** The export's files left out with the dropped parts. */
+  dropped: Omit<ViewerManifestFile, "stored">[];
+}
+
+export interface SplitViewerResult {
+  html: string;
+  files: ViewerDataFile[];
+  derived: ViewerDataFile[];
+  dropped: ViewerDataFile[];
+  originalSettings: Record<string, unknown>;
+  trimmedExport: string;
+}
+
+interface ConfigGroup {
+  name: string;
+  cache_name?: string | null;
+  /** The group_data entries the engine loads; R writes a lone one as a bare string. */
+  cached_items?: string | string[] | null;
+  group_data?: Record<string, unknown> | null;
+}
+
+interface ViewerConfig {
+  groups: ConfigGroup[];
+  geoms: { group?: { group_name?: string } | null }[];
+}
+
+export const DATA_FOLDER = "data/";
+
+/** Parts of the template the split leaves out of the config it ships, with the files only they use. */
+export interface TemplateDrops {
+  /** Surfaces, by surface type. */
+  surfaces: readonly string[];
+  /** Atlas volumes, by name: the export's "Atlas - <name> (<subject>)" groups. */
+  atlases: readonly string[];
+  /** Surface annotations, by name: the last path segment of an `annotation_list` entry. */
+  annotations: readonly string[];
+}
+
+export const NO_DROPS: TemplateDrops = { surfaces: [], atlases: [], annotations: [] };
+
+// The engine draws a table's electrodes on the pial surface whatever the table holds, and reads their
+// labels from the table, so the template's other surfaces, its atlas and its surface annotation are
+// only display options, which this app does without: together they are two thirds of its data.
+export const DROPPED_PARTS: TemplateDrops = {
+  surfaces: ["inflated", "sphere.reg", "pial-outer-smoothed"],
+  atlases: ["wmparc"],
+  annotations: ["aparc.a2009s"],
+};
+
+export const DERIVED_CONFIG_PREFIX = "ember-";
+
+export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.json) -->`;
+
+// The engine evaluates this once its data has loaded, with `app` and `canvas` in scope. Besides
+// handing the app to the parent page, it collapses the control panel's sections and lays the view
+// out for the frame:
+// - The engine narrows its canvas to dock the control panel in a column beside it; the canvas runs
+//   the full width instead, under the panel as it already does under the slice panels, so the
+//   frame's bottom-right corner is part of the view.
+// - A view offset frames the brain as the engine framed it in the docked layout, at the same size
+//   and centred between the slice panels and the control panel's column; it moves and scales the
+//   image without moving the point the brain rotates about. A frame too narrow to spare the panel
+//   its column is framed across its full width instead.
+// - The axis compass and its scale bar move from the bottom-left corner, under the slice panels,
+//   to the bottom-right one, scale bar first, leaving room for the page's full-screen button (44px,
+//   its size and inset plus a gap). The engine re-places the compass every frame in compass units
+//   of 1/zoom, so each frame's placement is moved along the camera's right axis.
+export const VIEWER_ADAPTER = `window.raveViewerApp = app;
+app.controllerGUI.getController('Dragdrop Uploader').hide();
+app.controllerGUI.folders.forEach((folder) => folder.close());
+if (!canvas.emberCentred) {
+  canvas.emberCentred = true;
+  const centre = () => {
+    const width = canvas.main_canvas.clientWidth;
+    const height = canvas.main_canvas.clientHeight;
+    if (!width || !height) return;
+    const side = canvas.sideCanvasEnabled ? canvas.side_width : 0;
+    const panel = app.controllerClosed ? 0 : app.$settingsPanel.offsetWidth;
+    const docked = width - panel >= panel ? width - panel : width;
+    const dockedHeight = (height * docked) / width;
+    canvas.mainCamera.setViewOffset(docked, dockedHeight, -side / 2, (dockedHeight - height) / 2, width, height);
+    canvas.needsUpdate = true;
+  };
+  app.resize = (width, height) => {
+    const fullWidth = width ?? app.$wrapper.clientWidth;
+    const fullHeight = height ?? app.$wrapper.clientHeight;
+    if (fullWidth <= 0 || fullHeight <= 0) return;
+    app.$settingsPanel.style.maxHeight = fullHeight + 'px';
+    canvas.handle_resize(fullWidth, fullHeight);
+    centre();
+  };
+  for (const name of ['enableSideCanvas', 'disableSideCanvas']) {
+    const original = canvas[name].bind(canvas);
+    canvas[name] = (...args) => {
+      const result = original(...args);
+      centre();
+      return result;
+    };
+  }
+  new ResizeObserver(centre).observe(canvas.main_canvas);
+  app.resize();
+}
+if (!canvas.compass.emberCornered) {
+  const compass = canvas.compass;
+  compass.emberCornered = true;
+  compass.ruler.position.x -= 50;
+  compass.rulerMeasure.position.x -= 50;
+  const placeBottomLeft = compass.update.bind(compass);
+  compass.update = () => {
+    placeBottomLeft();
+    const camera = canvas.mainCamera;
+    const width = canvas.main_canvas.clientWidth;
+    const height = canvas.main_canvas.clientHeight;
+    if (!compass.container.visible || !width || !height) return;
+    // The visible frustum's right and bottom edges in camera space, as three.js derives them.
+    const scale = 1 / camera.zoom;
+    const view = camera.view && camera.view.enabled ? camera.view : { fullWidth: width, fullHeight: height, offsetX: 0, offsetY: 0, width, height };
+    const halfWidth = ((camera.right - camera.left) * scale) / 2;
+    const halfHeight = ((camera.top - camera.bottom) * scale) / 2;
+    const unitsPerPixel = (2 * halfWidth) / view.fullWidth;
+    const right = (camera.right + camera.left) / 2 - halfWidth + unitsPerPixel * (view.offsetX + view.width);
+    const bottom = (camera.top + camera.bottom) / 2 + halfHeight - ((2 * halfHeight) / view.fullHeight) * (view.offsetY + view.height);
+    const goalRight = right - 13 * scale - 44 * unitsPerPixel;
+    const goalUp = bottom + 10 * scale;
+    // The camera's right and up axes, from where it sits and what it looks at.
+    const eye = camera.position;
+    const target = canvas.trackball.target;
+    const up = camera.up;
+    let bx = eye.x - target.x, by = eye.y - target.y, bz = eye.z - target.z;
+    const backLength = Math.hypot(bx, by, bz);
+    let rx = up.y * bz - up.z * by, ry = up.z * bx - up.x * bz, rz = up.x * by - up.y * bx;
+    const rightLength = Math.hypot(rx, ry, rz);
+    if (!backLength || !rightLength) return;
+    bx /= backLength;
+    by /= backLength;
+    bz /= backLength;
+    rx /= rightLength;
+    ry /= rightLength;
+    rz /= rightLength;
+    const ux = by * rz - bz * ry, uy = bz * rx - bx * rz, uz = bx * ry - by * rx;
+    const at = compass.container.position;
+    const dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
+    const moveRight = goalRight - (dx * rx + dy * ry + dz * rz);
+    const moveUp = goalUp - (dx * ux + dy * uy + dz * uz);
+    at.x += rx * moveRight + ux * moveUp;
+    at.y += ry * moveRight + uy * moveUp;
+    at.z += rz * moveRight + uz * moveUp;
+    compass.rulerContainer.position.copy(at);
+  };
+  canvas.needsUpdate = true;
+}
+window.parent.postMessage({ type: 'ember-rave-viewer-ready' }, window.location.origin);`;
+
+export const DISTRIBUTED_SETTINGS: Readonly<Record<string, unknown>> = {
+  cache_folder: DATA_FOLDER,
+  // No worker matching this engine build ships with the viewer, so keep every load on the fetch
+  // path the decompression shim covers instead of failing over from a missing worker per file.
+  worker_script: null,
+  custom_javascript: VIEWER_ADAPTER,
+};
+
+// The engine requests the export's own file names; this shim maps each request under the data
+// folder to its storedPath and inflates the gzip-compressed surface files natively before the engine
+// sees them.
+export const DECOMPRESSION_SHIM = `<script>
+// Added by EMBER: the binary template data beside this page is stored gzip-compressed (see manifest.json).
+(() => {
+  const dataRoot = new URL("${DATA_FOLDER}", document.baseURI);
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : String(input), document.baseURI);
+    if (url.origin !== dataRoot.origin || !url.pathname.startsWith(dataRoot.pathname)) return nativeFetch(input, init);
+    const compressed = !/\\.(mgz|json)$/.test(url.pathname);
+    const segments = url.pathname.slice(dataRoot.pathname.length).split("/");
+    url.pathname = dataRoot.pathname + segments.map((segment) => segment.replace(/^_+/, "")).join("/");
+    if (compressed) url.pathname += ".gz";
+    const request = input instanceof Request ? new Request(url, input) : new Request(url, init);
+    if (!compressed) return nativeFetch(request);
+    return nativeFetch(request).then((response) => {
+      const alreadyDecoded = /gzip/i.test(response.headers.get("Content-Encoding") ?? "");
+      if (!response.ok || !response.body || alreadyDecoded) return response;
+      return new Response(response.body.pipeThrough(new DecompressionStream("gzip")), {
+        status: response.status,
+        statusText: response.statusText,
+        headers: { "Content-Type": "application/octet-stream" },
+      });
+    });
+  };
+})();
+</script>
+`;
+
+const BLOCK_PATTERN =
+  /<script type='text\/plain;charset=UTF-8' data-for='#([^']+)' data-partition='(\d+)' data-type='([^']+)' data-size='(\d+)' data-start='(\d+)' data-parition-size='(\d+)'>\n([A-Za-z0-9+/=\n]*)<\/script>/g;
+const SAFE_PATH = /^[\w.-]+(?:\/[\w.-]+)*$/;
+const PARTITION_BYTES = 48473;
+const BASE64_LINE_LENGTH = 72;
+const SHIM_ANCHOR = "<script>";
+
+// GitHub Pages runs Jekyll over this site, and Jekyll leaves out any path segment that starts with
+// "_" (the export's "__global_data" folder, for one), so stored names drop those underscores.
+// The .mgz volumes are compressed already, and JSON stays readable in a diff since Pages gzips it on
+// the wire anyway; only the binary surface files are stored gzip-compressed.
+export function storedPath(path: string): string {
+  const visible = path
+    .split("/")
+    .map((segment) => segment.replace(/^_+/, ""))
+    .join("/");
+  return /\.(mgz|json)$/.test(visible) ? visible : `${visible}.gz`;
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+  }
+  return btoa(binary);
+}
+
+function fromBase64(text: string): Uint8Array {
+  const binary = atob(text.replace(/\n/g, ""));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function settingPattern(name: string): RegExp {
+  return new RegExp(`"${name}":(null|true|false|-?\\d[\\d.eE+-]*|"(?:[^"\\\\]|\\\\.)*")`, "g");
+}
+
+function replaceSettings(html: string, settings: Readonly<Record<string, unknown>>): [string, Record<string, unknown>] {
+  const previous: Record<string, unknown> = {};
+  let result = html;
+  for (const [name, value] of Object.entries(settings)) {
+    const matches = [...result.matchAll(settingPattern(name))];
+    if (matches.length !== 1) throw new Error(`Expected one "${name}" widget setting, found ${matches.length}.`);
+    previous[name] = JSON.parse(matches[0][1]);
+    result = result.replace(settingPattern(name), () => `"${name}":${JSON.stringify(value)}`);
+  }
+  return [result, previous];
+}
+
+function decodeBlocks(blocks: RegExpExecArray[]): ViewerDataFile[] {
+  const files = new Map<string, { type: string; size: number; parts: Uint8Array[]; offset: number }>();
+  for (const [, path, partition, type, size, start, partitionSize, body] of blocks) {
+    if (!SAFE_PATH.test(path) || path.split("/").includes("..")) throw new Error(`Unsafe data path: ${path}`);
+    const file = files.get(path) ?? { type, size: Number(size), parts: [], offset: 0 };
+    files.set(path, file);
+    const bytes = fromBase64(body);
+    if (
+      Number(partition) !== file.parts.length ||
+      Number(start) !== file.offset ||
+      Number(partitionSize) !== bytes.length
+    ) {
+      throw new Error(`Partition ${partition} of ${path} is out of order or the wrong size.`);
+    }
+    file.parts.push(bytes);
+    file.offset += bytes.length;
+  }
+  return [...files].map(([path, { type, size, parts, offset }]) => {
+    if (offset !== size) throw new Error(`${path} decoded to ${offset} bytes instead of ${size}.`);
+    const bytes = new Uint8Array(size);
+    let position = 0;
+    for (const part of parts) {
+      bytes.set(part, position);
+      position += part.length;
+    }
+    return { path, type, bytes };
+  });
+}
+
+function embedFile({ path, type, bytes }: ViewerDataFile): string {
+  const blocks: string[] = [];
+  for (let start = 0, partition = 0; start < bytes.length; start += PARTITION_BYTES, partition += 1) {
+    const part = bytes.subarray(start, start + PARTITION_BYTES);
+    // R's encoder breaks the line after every full line of whole 3-byte groups, so a chunk whose
+    // base64 fills its last line exactly gets a trailing newline unless that line ends in padding.
+    let wrapped = toBase64(part).replace(new RegExp(`.{${BASE64_LINE_LENGTH}}`, "g"), (line) => `${line}\n`);
+    if (part.length % 3 !== 0 && wrapped.endsWith("\n")) wrapped = wrapped.slice(0, -1);
+    blocks.push(
+      `<script type='text/plain;charset=UTF-8' data-for='#${path}' data-partition='${partition}' data-type='${type}' data-size='${bytes.length}' data-start='${start}' data-parition-size='${part.length}'>\n${wrapped}\n</script>`,
+    );
+  }
+  return blocks.join("\n");
+}
+
+function groupFiles(group: ConfigGroup): string[] {
+  return Object.values(group.group_data ?? {}).flatMap((entry) =>
+    typeof entry === "object" && entry !== null && "file_name" in entry && typeof entry.file_name === "string"
+      ? [`${group.cache_name ?? ""}/${entry.file_name}`]
+      : [],
+  );
+}
+
+function surfaceType(group: ConfigGroup): string | undefined {
+  const type = group.group_data?.surface_type;
+  return typeof type === "string" ? type : undefined;
+}
+
+function atlasName(group: ConfigGroup): string | undefined {
+  return /^Atlas - (.+?)(?: \(.*\))?$/.exec(group.name)?.[1];
+}
+
+function annotationEntries(group: ConfigGroup): string[] {
+  const list = group.group_data?.annotation_list;
+  if (typeof list === "string") return [list];
+  return Array.isArray(list) ? list.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+const annotationName = (entry: string): string => entry.slice(entry.lastIndexOf("/") + 1);
+
+// An annotation is an annotation_list entry plus a file per hemisphere, keyed lh_annotation_<entry>
+// and rh_annotation_<entry> in group_data and listed in cached_items; the engine offers whatever the
+// list names, and loads whatever cached_items names.
+function withoutAnnotations(group: ConfigGroup, names: readonly string[]): ConfigGroup {
+  const entries = annotationEntries(group);
+  const dropped = entries.filter((entry) => names.includes(annotationName(entry)));
+  if (dropped.length === 0) return group;
+  const keys = new Set(dropped.flatMap((entry) => [`lh_annotation_${entry}`, `rh_annotation_${entry}`]));
+  const kept = entries.filter((entry) => !dropped.includes(entry));
+  const list = Array.isArray(group.group_data?.annotation_list) ? kept : kept.at(0);
+  const groupData = Object.entries(group.group_data ?? {}).flatMap(([key, value]): [string, unknown][] => {
+    if (keys.has(key)) return [];
+    if (key === "annotation_list") return list === undefined ? [] : [[key, list]];
+    return [[key, value]];
+  });
+  const cached = group.cached_items;
+  return {
+    ...group,
+    cached_items: Array.isArray(cached) ? cached.filter((item) => !keys.has(item)) : cached,
+    group_data: Object.fromEntries(groupData),
+  };
+}
+
+const hasDrops = (drops: TemplateDrops): boolean =>
+  drops.surfaces.length + drops.atlases.length + drops.annotations.length > 0;
+
+/** Removes parts of the template from a viewer config, returning it and the data files only they used. */
+export function trimConfig(configText: string, drops: TemplateDrops): { config: string; droppedPaths: string[] } {
+  const config = JSON.parse(configText) as ViewerConfig;
+  const missing = [
+    ...drops.surfaces
+      .filter((type) => !config.groups.some((group) => surfaceType(group) === type))
+      .map((type) => `${type} surface`),
+    ...drops.atlases
+      .filter((name) => !config.groups.some((group) => atlasName(group) === name))
+      .map((name) => `${name} atlas`),
+    ...drops.annotations
+      .filter(
+        (name) => !config.groups.some((group) => annotationEntries(group).some((e) => annotationName(e) === name)),
+      )
+      .map((name) => `${name} annotation`),
+  ];
+  if (missing.length > 0) throw new Error(`The viewer config has no ${missing.join(", ")} to drop.`);
+
+  const isDropped = (group: ConfigGroup): boolean =>
+    drops.surfaces.includes(surfaceType(group) ?? "") || drops.atlases.includes(atlasName(group) ?? "");
+  const droppedGroups = new Set(config.groups.filter(isDropped).map((group) => group.name));
+  const groups = config.groups
+    .filter((group) => !isDropped(group))
+    .map((g) => withoutAnnotations(g, drops.annotations));
+  const geoms = config.geoms.filter((geom) => !droppedGroups.has(geom.group?.group_name ?? ""));
+  const keptFiles = new Set(groups.flatMap(groupFiles));
+  const droppedPaths = [...new Set(config.groups.flatMap(groupFiles))].filter((path) => !keptFiles.has(path));
+  const ending = configText.endsWith("\n") ? "\n" : "";
+  return { config: JSON.stringify({ ...config, groups, geoms }) + ending, droppedPaths };
+}
+
+// Rather than edit the export's config, the split writes a trimmed copy beside it and points the
+// widget at that, so every file the export embedded stays byte-identical.
+function deriveConfig(
+  exportHtml: string,
+  files: readonly ViewerDataFile[],
+  drops: TemplateDrops,
+): { derived: ViewerDataFile[]; droppedPaths: string[]; settings: Readonly<Record<string, unknown>> } {
+  if (!hasDrops(drops)) return { derived: [], droppedPaths: [], settings: DISTRIBUTED_SETTINGS };
+  const matches = [...exportHtml.matchAll(settingPattern("data_filename"))];
+  if (matches.length !== 1) throw new Error(`Expected one "data_filename" widget setting, found ${matches.length}.`);
+  const configPath = JSON.parse(matches[0][1]) as string;
+  const config = files.find((file) => file.path === configPath);
+  if (!config) throw new Error(`The export does not embed its config, ${configPath}.`);
+
+  const { config: text, droppedPaths } = trimConfig(new TextDecoder().decode(config.bytes), drops);
+  const absent = droppedPaths.filter((path) => !files.some((file) => file.path === path));
+  if (absent.length > 0) throw new Error(`The export does not embed ${absent.join(", ")}.`);
+  const derivedPath = configPath.replace(/[^/]+$/, (name) => `${DERIVED_CONFIG_PREFIX}${name}`);
+  return {
+    derived: [{ path: derivedPath, type: config.type, bytes: new TextEncoder().encode(text) }],
+    droppedPaths,
+    settings: { ...DISTRIBUTED_SETTINGS, data_filename: derivedPath },
+  };
+}
+
+function contiguousBlocks(exportHtml: string): RegExpExecArray[] {
+  const blocks = [...exportHtml.matchAll(BLOCK_PATTERN)];
+  if (blocks.length === 0) throw new Error("The viewer export embeds no data files.");
+  blocks.slice(1).forEach((block, index) => {
+    const previous = blocks[index];
+    if (exportHtml.slice(previous.index + previous[0].length, block.index) !== "\n") {
+      throw new Error("The embedded data files are not one contiguous run of blocks.");
+    }
+  });
+  return blocks;
+}
+
+export function splitViewer(exportHtml: string, drops: TemplateDrops = NO_DROPS): SplitViewerResult {
+  if (exportHtml.includes(DATA_MARKER)) throw new Error("This viewer has already been split.");
+  const blocks = contiguousBlocks(exportHtml);
+  const all = decodeBlocks(blocks);
+  const { derived, droppedPaths, settings } = deriveConfig(exportHtml, all, drops);
+  const files = all.filter((file) => !droppedPaths.includes(file.path));
+  const stored = [...files, ...derived].map((file) => storedPath(file.path));
+  if (new Set(stored).size !== stored.length || stored.some((path) => /(?:^|\/)(?:\.gz)?(?:\/|$)/.test(path))) {
+    throw new Error("Two data files share a stored path, or a path segment is only underscores.");
+  }
+
+  const before = exportHtml.slice(0, blocks[0].index);
+  const after = exportHtml.slice(blocks[blocks.length - 1].index + blocks[blocks.length - 1][0].length);
+  const [withSettings, originalSettings] = replaceSettings(before + DATA_MARKER + after, settings);
+  const anchor = withSettings.indexOf(SHIM_ANCHOR);
+  if (anchor < 0) throw new Error("The viewer export has no script for the decompression shim to precede.");
+  const keptBlocks = blocks.filter((block) => !droppedPaths.includes(block[1]));
+  return {
+    html: withSettings.slice(0, anchor) + DECOMPRESSION_SHIM + withSettings.slice(anchor),
+    files,
+    derived,
+    dropped: all.filter((file) => droppedPaths.includes(file.path)),
+    originalSettings,
+    trimmedExport: before + keptBlocks.map((block) => block[0]).join("\n") + after,
+  };
+}
+
+export function joinViewer(
+  html: string,
+  files: readonly ViewerDataFile[],
+  originalSettings: Readonly<Record<string, unknown>>,
+): string {
+  if (!html.includes(DATA_MARKER) || !html.includes(DECOMPRESSION_SHIM)) {
+    throw new Error("This viewer was not produced by splitViewer.");
+  }
+  const [withSettings] = replaceSettings(html.replace(DECOMPRESSION_SHIM, ""), originalSettings);
+  return withSettings.replace(DATA_MARKER, () => files.map(embedFile).join("\n"));
+}

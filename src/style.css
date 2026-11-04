@@ -38,45 +38,75 @@
   }
 }
 
-.card-note {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.load-heading-row {
-  align-items: flex-start;
-}
-
-.source-tabs {
-  display: inline-flex;
-  max-width: 100%;
+/* clip-extractor's card top row: equal 1fr side columns keep the source picker truly centred, with
+   the card's one action pinned to the right. */
+.card-toprow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.toprow-slot {
+  min-width: 0;
+}
+
+.toprow-end {
+  justify-self: end;
+}
+
+/* clip-extractor's segmented control, copied as it stands there (see AGENTS.md on siblings). */
+.seg {
+  display: inline-flex;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.source-tabs > button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-width: 0;
-  border: 0;
-  border-right: 1px solid var(--border);
+.seg button {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border: none;
   border-radius: 0;
+  border-right: 1px solid var(--border);
 }
 
-.source-tabs > button:last-child {
-  border-right: 0;
+.seg-icon {
+  flex-shrink: 0;
+  height: 1em;
+  width: auto;
+  line-height: 1;
 }
 
-.source-tabs > button:not(.primary):not(:disabled):hover {
+img.seg-icon {
+  height: 1.15em;
+}
+
+.seg button:last-child {
+  border-right: none;
+}
+
+.seg button:hover:not(.active):not(:disabled) {
   background: var(--accent-soft);
 }
 
-.source-tabs .badge {
+.seg button.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.source-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.source-seg .badge {
   margin-left: 0.15rem;
 }
 
@@ -149,24 +179,36 @@
 }
 
 .viewer-card {
-  padding: 1rem;
+  margin: 1.25rem 0;
 }
 
-.viewer-card > .card-heading,
-.viewer-credit {
-  margin-right: 0.5rem;
-  margin-left: 0.5rem;
-}
-
-.viewer-heading-actions,
+/* Bottom-right, where media players put it, and below the engine's control panel at desktop sizes.
+   Pointer devices reveal it on hover; a click inside the viewer always lands while it is shown. */
 .viewer-fullscreen-btn {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transition: opacity 0.15s ease;
 }
 
-.viewer-heading-actions {
-  flex: 0 0 auto;
+@media (hover: hover) {
+  .viewer-fullscreen-btn {
+    opacity: 0;
+  }
+
+  .viewer-frame-shell:hover .viewer-fullscreen-btn,
+  .viewer-fullscreen-btn:focus-visible {
+    opacity: 1;
+  }
 }
 
 .viewer-fullscreen-btn:hover {
@@ -175,17 +217,11 @@
 }
 
 .viewer-fullscreen-exit-icon,
-.viewer-fullscreen-exit-label {
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-icon {
   display: none;
 }
 
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-icon,
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-enter-label {
-  display: none;
-}
-
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-icon,
-.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-label {
+.viewer-fullscreen-btn[aria-pressed="true"] .viewer-fullscreen-exit-icon {
   display: inline;
 }
 
@@ -224,11 +260,16 @@
   background: var(--accent-soft);
 }
 
+/* Map-style attribution: small, quiet and tucked under the viewer's bottom-right corner. */
 .viewer-credit {
-  margin-top: 0.75rem;
-  margin-bottom: 0;
+  margin: 0.35rem 0.25rem 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.viewer-credit a {
+  color: inherit;
 }
 
 .viewer-card:fullscreen {
@@ -249,27 +290,49 @@
   height: auto;
 }
 
-.viewer-card:fullscreen .viewer-credit,
-.viewer-card:fullscreen .card-note {
-  display: none;
-}
-
-@media (max-width: 700px) {
-  .source-tabs {
-    display: flex;
-    flex-direction: column;
+/* As in clip-extractor, the row's slots stack and centre once the picker and the action no longer
+   fit side by side; a slot with nothing showing drops out rather than leaving a gap. */
+@media (max-width: 820px) {
+  .card-toprow {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
   }
 
-  .source-tabs > button {
-    width: 100%;
-    border-right: 0;
+  .toprow-slot {
+    max-width: 100%;
+  }
+
+  .toprow-end {
+    justify-self: center;
+  }
+
+  .toprow-slot:not(:has(> :not([hidden]))) {
+    display: none;
+  }
+}
+
+/* As in clip-extractor, the source picker stacks into full-width bars once its row no longer fits. */
+@media (max-width: 600px) {
+  .source-seg {
+    flex-direction: column;
+    width: 16rem;
+    max-width: 100%;
+  }
+
+  .source-seg button {
+    justify-content: center;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    border-right: none;
     border-bottom: 1px solid var(--border);
   }
 
-  .source-tabs > button:last-child {
-    border-bottom: 0;
+  .source-seg button:last-child {
+    border-bottom: none;
   }
+}
 
+@media (max-width: 700px) {
   .url-row {
     flex-direction: column;
   }
@@ -278,15 +341,11 @@
     min-height: 600px;
     height: 75vh;
   }
-
-  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-enter-label,
-  .viewer-fullscreen-btn[aria-pressed] .viewer-fullscreen-exit-label {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dropzone {
+  .dropzone,
+  .viewer-fullscreen-btn {
     transition: none;
   }
 }

@@ -4,7 +4,7 @@ import { bootMain, el, pickFile } from "./helpers/mainHarness";
 
 const viewer = vi.hoisted(() => ({
   whenReady: vi.fn(async () => {}),
-  loadCsv: vi.fn(async () => {}),
+  loadTable: vi.fn(async () => {}),
   clearElectrodes: vi.fn(async () => {}),
   setBackground: vi.fn(async () => {}),
   destroy: vi.fn(),
@@ -32,11 +32,11 @@ describe("main.ts boot with the viewer adapter", () => {
     const file = new File([csv], "subject.csv", { type: "text/csv" });
     pickFile(file);
     await vi.waitFor(() => expect(el("load-status").textContent).toContain("subject.csv loaded"));
-    expect(viewer.loadCsv).toHaveBeenCalledWith(file);
+    expect(viewer.loadTable).toHaveBeenCalledWith(file);
   });
 
   it("shows an adapter load error and remains able to load another CSV", async () => {
-    viewer.loadCsv.mockRejectedValueOnce(new Error("RAVE could not render the table."));
+    viewer.loadTable.mockRejectedValueOnce(new Error("RAVE could not render the table."));
     const failed = new File(["Electrode,MNI152_x,MNI152_y,MNI152_z,Label\n2,4,5,6,A2"], "failed.csv", {
       type: "text/csv",
     });

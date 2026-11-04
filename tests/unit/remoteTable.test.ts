@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { MAX_CSV_BYTES } from "../../src/lib/electrodeCsv";
-import { fetchRemoteCsv, normalizeRemoteCsvUrl, RemoteCsvError } from "../../src/lib/remoteCsv";
+import { MAX_TABLE_BYTES } from "../../src/lib/electrodeTable";
+import { fetchRemoteTable, normalizeRemoteTableUrl, RemoteTableError } from "../../src/lib/remoteTable";
 
 const CSV = "Electrode,MNI152_x,MNI152_y,MNI152_z,Label\n1,1,2,3,A1";
 
@@ -15,10 +15,10 @@ function response(options: { ok?: boolean; status?: number; text?: string; lengt
   } as Response;
 }
 
-describe("normalizeRemoteCsvUrl", () => {
+describe("normalizeRemoteTableUrl", () => {
   it("converts GitHub blob links to the raw content CDN", () => {
     expect(
-      normalizeRemoteCsvUrl(
+      normalizeRemoteTableUrl(
         " https://github.com/rave-ieeg/rave-ieeg.github.io/blob/abc123/posts/3dviewer/PAV080.csv?plain=1#L1 ",
       ),
     ).toEqual({
@@ -29,13 +29,13 @@ describe("normalizeRemoteCsvUrl", () => {
   });
 
   it("also accepts GitHub /raw/ file links and safely encodes path segments", () => {
-    expect(normalizeRemoteCsvUrl("https://www.github.com/org/repo/raw/main/a%20folder/test.csv").downloadUrl).toBe(
+    expect(normalizeRemoteTableUrl("https://www.github.com/org/repo/raw/main/a%20folder/test.csv").downloadUrl).toBe(
       "https://raw.githubusercontent.com/org/repo/main/a%20folder/test.csv",
     );
   });
 
   it("preserves ordinary public URLs", () => {
-    expect(normalizeRemoteCsvUrl("http://example.org/files/subject.csv?download=1")).toEqual({
+    expect(normalizeRemoteTableUrl("http://example.org/files/subject.csv?download=1")).toEqual({
       requestedUrl: "http://example.org/files/subject.csv?download=1",
       downloadUrl: "http://example.org/files/subject.csv?download=1",
       fileName: "subject.csv",
@@ -43,28 +43,40 @@ describe("normalizeRemoteCsvUrl", () => {
   });
 
   it.each([
-    ["", "Enter a public CSV URL"],
+    ["", "Enter a public table URL"],
     ["not a URL", "complete HTTP or HTTPS"],
     ["ftp://example.org/test.csv", "Only HTTP and HTTPS"],
     ["https://user:secret@example.org/test.csv", "username or password"],
     ["https://github.com/org/repo", "using a /blob/ or /raw/ link"],
     ["https://github.com/org/repo/tree/main/files", "using a /blob/ or /raw/ link"],
-    ["https://example.org/test.tsv", "must point to a .csv file"],
+    ["https://example.org/test.txt", "must point to a .tsv or .csv file"],
     ["https://example.org/bad%E0.csv", "invalid percent encoding"],
   ])("rejects %s", (input, message) => {
-    expect(() => normalizeRemoteCsvUrl(input)).toThrow(message);
+    expect(() => normalizeRemoteTableUrl(input)).toThrow(message);
   });
 
   it("uses a dedicated error type", () => {
-    expect(() => normalizeRemoteCsvUrl("")).toThrow(RemoteCsvError);
+    expect(() => normalizeRemoteTableUrl("")).toThrow(RemoteTableError);
   });
 });
 
-describe("fetchRemoteCsv", () => {
+describe("fetchRemoteTable", () => {
+  it.each([
+    ["https://example.org/subject.tsv", "text/tab-separated-values"],
+    ["https://example.org/subject.CSV", "text/csv"],
+  ])("types the table downloaded from %s by its extension", async (url, type) => {
+    const remote = await fetchRemoteTable(
+      url,
+      undefined,
+      vi.fn(async () => response()),
+    );
+    expect(remote.file.type).toBe(type);
+  });
+
   it("downloads a CSV into a named File and forwards the abort signal", async () => {
     const controller = new AbortController();
     const fetcher = vi.fn(async () => response());
-    const result = await fetchRemoteCsv("https://example.org/subject.csv", controller.signal, fetcher);
+    const result = await fetchRemoteTable("https://example.org/subject.csv", controller.signal, fetcher);
 
     expect(fetcher).toHaveBeenCalledWith("https://example.org/subject.csv", { signal: controller.signal });
     expect(result.file.name).toBe("subject.csv");
@@ -74,14 +86,14 @@ describe("fetchRemoteCsv", () => {
 
   it("reports network and HTTP failures", async () => {
     await expect(
-      fetchRemoteCsv(
+      fetchRemoteTable(
         "https://example.org/subject.csv",
         undefined,
         vi.fn(async () => Promise.reject(new Error("no"))),
       ),
     ).rejects.toThrow("remote server may not allow browser access");
     await expect(
-      fetchRemoteCsv(
+      fetchRemoteTable(
         "https://example.org/subject.csv",
         undefined,
         vi.fn(async () => response({ ok: false, status: 404 })),
@@ -92,7 +104,7 @@ describe("fetchRemoteCsv", () => {
   it("preserves AbortError so callers can silently cancel superseded requests", async () => {
     const aborted = new DOMException("aborted", "AbortError");
     await expect(
-      fetchRemoteCsv(
+      fetchRemoteTable(
         "https://example.org/subject.csv",
         undefined,
         vi.fn(async () => Promise.reject(aborted)),
@@ -102,10 +114,10 @@ describe("fetchRemoteCsv", () => {
 
   it("rejects an oversized declared response without reading it", async () => {
     const text = vi.fn(async () => CSV);
-    const oversized = response({ length: String(MAX_CSV_BYTES + 1) });
+    const oversized = response({ length: String(MAX_TABLE_BYTES + 1) });
     oversized.text = text;
     await expect(
-      fetchRemoteCsv(
+      fetchRemoteTable(
         "https://example.org/subject.csv",
         undefined,
         vi.fn(async () => oversized),
@@ -115,9 +127,9 @@ describe("fetchRemoteCsv", () => {
   });
 
   it("rejects an oversized response when content-length is absent", async () => {
-    const oversized = "x".repeat(MAX_CSV_BYTES + 1);
+    const oversized = "x".repeat(MAX_TABLE_BYTES + 1);
     await expect(
-      fetchRemoteCsv(
+      fetchRemoteTable(
         "https://example.org/subject.csv",
         undefined,
         vi.fn(async () => response({ text: oversized })),

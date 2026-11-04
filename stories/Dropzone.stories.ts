@@ -2,7 +2,7 @@ import { withCard, withTheme } from "./utils";
 
 type DropzoneState = "idle" | "dragover" | "rejected";
 
-// Kept in sync with the electrode CSV dropzone and refusal text.
+// Kept in sync with the electrode table dropzone and refusal text.
 function buildDropzone(state: DropzoneState): HTMLElement {
   const dz = document.createElement("div");
   dz.id = "dropzone";
@@ -10,20 +10,14 @@ function buildDropzone(state: DropzoneState): HTMLElement {
   if (state === "dragover") dz.classList.add("dragover");
   dz.innerHTML = `
     <div class="dz-inner">
-      <div class="dz-icon">
-        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
-          stroke-width="1.7" aria-hidden="true">
-          <path d="M4 3h11l5 5v13H4z" />
-          <path d="M15 3v5h5M8 13h8M8 17h8" />
-        </svg>
-      </div>
+      <div class="dz-icon"><span aria-hidden="true">📋</span></div>
       <p>
-        Drop an electrode CSV here, or
-        <button type="button" class="dz-browse">browse for a file</button>.
+        Drop a table here, or click to browse
+        <button type="button" class="dz-browse">files</button>.
       </p>
-      <p class="dz-hint">The file is read locally and never uploaded.</p>
+      <p class="dz-hint">The file is only loaded locally and is never uploaded to EMBER.</p>
       <p class="dz-reject" ${state === "rejected" ? "" : "hidden"}>
-        That file is not a CSV.<br /><br />Choose a file whose name ends in .csv.
+        That file is not a table.<br /><br />Choose a file whose name ends in .tsv or .csv.
       </p>
     </div>
   `;
@@ -55,11 +49,11 @@ export const DragOverDark = {
 };
 
 export const RejectedLight = {
-  name: "Non-CSV rejected (light)",
+  name: "Non-table rejected (light)",
   render: () => withTheme("light", () => buildDropzone("rejected")),
 };
 
 export const RejectedDark = {
-  name: "Non-CSV rejected (dark)",
+  name: "Non-table rejected (dark)",
   render: () => withTheme("dark", () => buildDropzone("rejected")),
 };

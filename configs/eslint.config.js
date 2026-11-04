@@ -6,5 +6,6 @@ import { createEslintConfig } from "@brain-bbqs/config/eslint";
 
 export default createEslintConfig({
   tsconfigRootDir: path.resolve(import.meta.dirname, ".."),
+  typeAwareFiles: ["src/**/*.ts", "configs/**/*.ts", "scripts/**/*.ts"],
   complexity: 15,
 });

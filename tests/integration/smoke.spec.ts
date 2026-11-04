@@ -3,6 +3,7 @@ import { seedTheme } from "@brain-bbqs/test-utils/playwright";
 import { THEME_KEY } from "../../src/lib/settings";
 import { dropFile } from "./helpers/drop";
 
+const VALID_TSV = "Electrode\tMNI152_x\tMNI152_y\tMNI152_z\tLabel\n1\t-8.2\t4.2\t30.1\tA1";
 const VALID_CSV = "Electrode,MNI152_x,MNI152_y,MNI152_z,Label\n1,-8.2,4.2,30.1,A1";
 
 test.describe("EMBER RAVE Visualizer", () => {
@@ -24,11 +25,15 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(page.locator(".viewer-credit")).toContainText("three-brain-js");
   });
 
-  test("loads and removes a dropped local electrode CSV", async ({ page }) => {
+  test("loads and removes a dropped local electrode table", async ({ page }) => {
     await page.goto("/?test&fake_viewer");
-    await dropFile(page, { name: "subject.csv", mimeType: "text/csv", buffer: Buffer.from(VALID_CSV) });
+    await dropFile(page, {
+      name: "subject.tsv",
+      mimeType: "text/tab-separated-values",
+      buffer: Buffer.from(VALID_TSV),
+    });
     const status = page.locator("#load-status");
-    await expect(status).toContainText("subject.csv loaded");
+    await expect(status).toContainText("subject.tsv loaded");
     await expect(status).toContainText("1 electrode · 5 columns · Local file");
     await expect(page.locator("#clear-electrodes-btn")).toBeVisible();
 
@@ -36,10 +41,10 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(status).toBeHidden();
   });
 
-  test("rejects a non-CSV drop before trying to load it", async ({ page }) => {
+  test("rejects a non-table drop before trying to load it", async ({ page }) => {
     await page.goto("/?test&fake_viewer");
     await dropFile(page, { name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("hello") });
-    await expect(page.locator("#dropzone-reject")).toContainText("not a CSV");
+    await expect(page.locator("#dropzone-reject")).toContainText("not a table");
     await expect(page.locator("#load-status")).toBeHidden();
   });
 
@@ -58,9 +63,9 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(page.locator("#load-status")).toContainText("raw.githubusercontent.com");
   });
 
-  test("lands on a deterministic loaded state from ?test&mock_csv", async ({ page }) => {
-    await page.goto("/?test&mock_csv");
-    await expect(page.locator("#load-status")).toContainText("test-injection-mock-electrodes.csv loaded");
+  test("lands on a deterministic loaded state from ?test&mock_table", async ({ page }) => {
+    await page.goto("/?test&mock_table");
+    await expect(page.locator("#load-status")).toContainText("test-injection-mock-electrodes.tsv loaded");
     await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
   });
 
