@@ -5,7 +5,7 @@ import { createOAuthClient } from "@brain-bbqs/ember-client";
 // own. The redirect URI is the client's default, computed at runtime from wherever the page is
 // served (production, a PR preview, local dev), and every such location has to be registered on the
 // application before sign-in works from there (see docs/README.md).
-export const OAUTH_CLIENT_ID = "WjVWvWBVkGgsBI7G8hSKqabn0jkWntvgUpGfOppi";
+export const OAUTH_CLIENT_ID = "rwZ5SwY55Vvj0Mkj0HLSbAW0QkOU8uK4dVW0QQyP";
 
 // Where a pending login's PKCE verifier and state wait in sessionStorage between the redirect out
 // and the callback back. Renaming it would drop a sign-in that is mid-redirect across a deploy.
