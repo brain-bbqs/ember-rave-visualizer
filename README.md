@@ -29,6 +29,9 @@ The app accepts tabular files (`.tsv`/`.csv`) of the following structure:
 
 [Download an example table](https://brain-bbqs.github.io/ember-rave-visualizer/examples/example-electrodes.tsv) to try out the app with nine contacts in the left amygdala and hippocampus.
 
+Tables can be loaded from your computer, from a public URL, or picked out of the [EMBER archive](https://dandi.emberarchive.org) under Browse EMBER.
+Public datasets are listed for everyone; sign in with EMBER to also browse your own embargoed datasets.
+
 ---
 
 Built & maintained by the [Center for Open Neuroscience](https://centerforopenneuroscience.org) and the [Johns Hopkins Applied Physics Laboratory](https://www.jhuapl.edu/).

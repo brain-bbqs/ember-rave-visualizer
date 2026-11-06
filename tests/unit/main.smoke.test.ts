@@ -4,8 +4,15 @@ import { resolve } from "node:path";
 import { throwingStorage } from "@brain-bbqs/test-utils/vitest";
 import { countChangelogVersions } from "@brain-bbqs/ui";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { oauth } from "../../src/lib/oauth";
 import { THEME_KEY } from "../../src/lib/settings";
 import { bootMain, el, pickFile } from "./helpers/mainHarness";
+
+// Signing in leaves the page for the archive, which jsdom cannot follow.
+vi.mock("../../src/lib/oauth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/lib/oauth")>();
+  return { ...actual, oauth: { ...actual.oauth, startLogin: vi.fn(() => Promise.resolve()) } };
+});
 
 const HEADER = "Electrode,MNI152_x,MNI152_y,MNI152_z,Label";
 const WHATS_NEW_RECENT_VERSIONS = 3;
@@ -23,6 +30,23 @@ describe("main.ts boot", () => {
     expect(el("viewer-loading").hidden).toBe(true);
     expect(el("viewer-test-placeholder").hidden).toBe(false);
     expect(el("load-status").hidden).toBe(true);
+  });
+
+  it("offers EMBER sign-in in the header", () => {
+    expect(el("oauth-signin-btn").hidden).toBe(false);
+    expect(el("oauth-signed-in").hidden).toBe(true);
+    el("oauth-signin-btn").click();
+    expect(oauth.startLogin).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens Browse EMBER, saying so when the archive cannot be reached", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    el("source-ember-btn").click();
+    expect(el("ember-source-pane").hidden).toBe(false);
+    expect(el("browse-signin-hint").hidden).toBe(false);
+    await vi.waitFor(() => expect(el("browse-status").textContent).toMatch(/^Could not read the EMBER archive/));
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
   });
 
   it("switches between local and remote URL sources", () => {
