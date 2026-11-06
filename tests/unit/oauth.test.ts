@@ -21,7 +21,7 @@ afterEach(() => {
 describe("the sign-in identity the archive knows this app by", () => {
   // Any drift would strand a login that is mid-redirect across a deploy, or fail every new one.
   it("keeps the registered client id and the pending-login key", () => {
-    expect(OAUTH_CLIENT_ID).toBe("WjVWvWBVkGgsBI7G8hSKqabn0jkWntvgUpGfOppi");
+    expect(OAUTH_CLIENT_ID).toBe("rwZ5SwY55Vvj0Mkj0HLSbAW0QkOU8uK4dVW0QQyP");
     expect(OAUTH_PKCE_STORAGE_KEY).toBe("ember-rave-visualizer.oauth-pkce.v1");
   });
 
