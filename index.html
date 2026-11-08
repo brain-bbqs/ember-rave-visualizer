@@ -4,14 +4,20 @@
     <script>try {
   var storedTheme = localStorage.getItem("ember-rave-visualizer.theme");
   if (storedTheme === "light" || storedTheme === "dark") document.documentElement.dataset.theme = storedTheme;
+} catch (e) {}
+try {
+  var storedSettings = JSON.parse(localStorage.getItem("ember-rave-visualizer.settings.v1"));
+  if (storedSettings && storedSettings.oauth && storedSettings.oauth.accessToken) {
+    document.documentElement.dataset.signedIn = "1";
+  }
 } catch (e) {}</script>
 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EMBER RAVE Visualizer</title>
     <link rel="icon" type="image/svg+xml" href="./assets/app-logo-DpyVFZhq.svg" />
-    <script type="module" crossorigin src="./assets/index-DNDdfkvm.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Bqfig23f.css">
+    <script type="module" crossorigin src="./assets/index-Cdx2XJee.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BxOZNBRn.css">
   </head>
   <body>
     <a
@@ -83,6 +89,35 @@
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
             </svg>
           </button>
+          <!-- The shared EMBER account menu (@brain-bbqs/ui's html/account-menu.html), with this
+               page's kebab-case ids. -->
+          <button type="button" id="oauth-signin-btn" class="primary oauth-signin-btn">Sign in with EMBER</button>
+          <div id="oauth-signed-in" class="oauth-signed-in" hidden>
+            <span id="oauth-avatar" class="oauth-avatar" tabindex="0" aria-label="Account menu"></span>
+            <div class="oauth-popover" role="menu">
+              <p class="oauth-popover-greeting">You are logged in as <strong id="oauth-username"></strong>.</p>
+              <hr class="oauth-popover-divider" />
+              <button type="button" id="oauth-signout-btn" class="oauth-popover-signout" role="menuitem">
+                <span>Sign out</span>
+                <svg
+                  class="oauth-popover-signout-icon"
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -101,15 +136,8 @@
             <button type="button" id="source-local-btn" class="active" aria-pressed="true">
               <span class="seg-icon" aria-hidden="true">📁</span>Load local file
             </button>
-            <button
-              type="button"
-              id="source-ember-btn"
-              aria-pressed="false"
-              disabled
-              title="EMBER sign-in and archive browsing will be added in a follow-up"
-            >
+            <button type="button" id="source-ember-btn" aria-pressed="false">
               <img class="seg-icon" src="./assets/ember-mark-X20jsAgA.svg" alt="" width="12" height="15" />Browse EMBER
-              <span class="badge upload">Coming soon</span>
             </button>
             <button type="button" id="source-url-btn" aria-pressed="false">
               <span class="seg-icon" aria-hidden="true">🔗</span>Load from a URL
@@ -133,6 +161,37 @@
             </div>
             <input type="file" id="file-input" accept=".tsv,.csv,text/tab-separated-values,text/csv" hidden />
           </div>
+        </div>
+
+        <!-- Browse EMBER, as in clip-extractor: public datasets are read from the archive's public
+             bucket with no sign-in, and a signed-in visitor's own embargoed datasets are asked of
+             the API (see src/lib/archives.ts and src/lib/embargoed.ts). -->
+        <div id="ember-source-pane" class="source-pane" hidden>
+          <div class="browse-controls">
+            <input
+              type="search"
+              id="browse-filter"
+              placeholder="Filter by dataset number, title or file name"
+              aria-label="Filter datasets"
+            />
+          </div>
+          <div id="browse-status" class="hint browse-status" role="status"></div>
+          <div class="browse-columns">
+            <div class="browse-column">
+              <p class="browse-heading" id="browse-dandiset-heading">Datasets</p>
+              <ul id="browse-dandisets" class="browse-list" aria-labelledby="browse-dandiset-heading"></ul>
+            </div>
+            <div class="browse-column">
+              <p class="browse-heading">
+                <span id="browse-table-heading">Tables</span>
+                <a id="browse-dandiset-link" class="browse-out" target="_blank" rel="noopener" hidden
+                  >Open dataset <span aria-hidden="true">↗</span></a
+                >
+              </p>
+              <ul id="browse-tables" class="browse-list" aria-labelledby="browse-table-heading"></ul>
+            </div>
+          </div>
+          <p id="browse-signin-hint" class="dz-hint">Sign in with EMBER to also see your own embargoed datasets.</p>
         </div>
 
         <div id="url-source-pane" class="source-pane" hidden>
