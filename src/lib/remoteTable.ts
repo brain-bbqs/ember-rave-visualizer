@@ -62,15 +62,22 @@ export function normalizeRemoteTableUrl(input: string): RemoteTableUrl {
   return { requestedUrl, downloadUrl: download.toString(), fileName };
 }
 
-export async function fetchRemoteTable(
-  input: string,
-  signal?: AbortSignal,
-  fetcher: typeof fetch = fetch,
-): Promise<RemoteTableFile> {
-  const remote = normalizeRemoteTableUrl(input);
+export interface DownloadTableOptions {
+  signal?: AbortSignal;
+  /** Sent with the request: an embargoed EMBER asset's bearer token, and nothing for a public file. */
+  headers?: Record<string, string>;
+  fetcher?: typeof fetch;
+}
+
+/** Downloads a table whose download URL is already known, under the same size limit as a local file. */
+export async function downloadTableFile(
+  downloadUrl: string,
+  fileName: string,
+  { signal, headers, fetcher = fetch }: DownloadTableOptions = {},
+): Promise<File> {
   let response: Response;
   try {
-    response = await fetcher(remote.downloadUrl, { signal });
+    response = await fetcher(downloadUrl, headers ? { signal, headers } : { signal });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new RemoteTableError("The table could not be downloaded. The remote server may not allow browser access.");
@@ -86,10 +93,16 @@ export async function fetchRemoteTable(
   const size = new TextEncoder().encode(text).byteLength;
   if (size > MAX_TABLE_BYTES) throw new RemoteTableError("The remote table is larger than the 20 MB limit.");
 
-  return {
-    ...remote,
-    file: new File([text], remote.fileName, {
-      type: remote.fileName.toLowerCase().endsWith(".csv") ? "text/csv" : "text/tab-separated-values",
-    }),
-  };
+  return new File([text], fileName, {
+    type: fileName.toLowerCase().endsWith(".csv") ? "text/csv" : "text/tab-separated-values",
+  });
+}
+
+export async function fetchRemoteTable(
+  input: string,
+  signal?: AbortSignal,
+  fetcher: typeof fetch = fetch,
+): Promise<RemoteTableFile> {
+  const remote = normalizeRemoteTableUrl(input);
+  return { ...remote, file: await downloadTableFile(remote.downloadUrl, remote.fileName, { signal, fetcher }) };
 }

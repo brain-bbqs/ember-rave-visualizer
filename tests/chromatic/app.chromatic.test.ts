@@ -21,3 +21,17 @@ forEachViewport(test, "Main page - electrode table loaded", async ({ page }) => 
   await expect(page.locator("#viewer-test-placeholder")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
+
+forEachViewport(test, "Main page - Browse EMBER", async ({ page }) => {
+  await page.goto("/?test&fake_viewer&remote_listing=7");
+  await page.locator("#browse-dandisets .browse-item").first().click();
+  await expect(page.locator("#browse-tables .browse-item")).toHaveCount(3);
+  await expectNoHorizontalOverflow(page);
+});
+
+forEachViewport(test, "Main page - signed in, Browse EMBER", async ({ page }) => {
+  await page.goto("/?test&fake_viewer&signed_in&remote_listing=7");
+  await expect(page.locator("#oauth-avatar")).toHaveText("LS");
+  await expect(page.locator("#browse-dandisets .badge")).toHaveText("embargoed");
+  await expectNoHorizontalOverflow(page);
+});

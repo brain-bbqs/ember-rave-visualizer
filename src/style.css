@@ -106,10 +106,6 @@ img.seg-icon {
   gap: 0.4rem;
 }
 
-.source-seg .badge {
-  margin-left: 0.15rem;
-}
-
 .source-pane {
   min-height: 8.5rem;
 }
@@ -150,6 +146,200 @@ img.seg-icon {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Browse EMBER, as clip-extractor draws it: a filter above two lists, datasets on the left and the
+   tables in the chosen dataset on the right. */
+.browse-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.browse-controls input[type="search"] {
+  flex: 1;
+  min-width: 12rem;
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.browse-status {
+  margin: 0.6rem 0 0;
+  min-height: 1.2em;
+}
+
+.browse-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+
+.browse-column {
+  min-width: 0;
+}
+
+.browse-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.browse-out {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.browse-out:hover {
+  text-decoration: underline;
+}
+
+/* Both lists scroll rather than growing the card, which sits above the viewer. */
+.browse-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.browse-list:empty {
+  border-style: dashed;
+  min-height: 3rem;
+}
+
+/* clip-extractor's slim accent thumb: the ::-webkit-scrollbar rules where they are understood,
+   the standard properties elsewhere, since Chrome ignores the former once the latter are set. */
+@supports not selector(::-webkit-scrollbar) {
+  .browse-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+}
+
+.browse-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.browse-list::-webkit-scrollbar-track,
+.browse-list::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.browse-list::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+.browse-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.browse-list::-webkit-scrollbar-button {
+  display: none;
+}
+
+.browse-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.browse-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  white-space: normal;
+}
+
+.browse-item:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.browse-item[aria-current="true"] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* The identifier, and under it the badge marking a dataset only its signed-in owner can see. */
+.browse-idcol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+/* Wide enough for the badge, so the row carrying it starts its title where every other row does. */
+#browse-dandisets .browse-idcol {
+  min-width: 5rem;
+}
+
+.browse-item .browse-id {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.browse-idcol .badge {
+  font-size: 0.6rem;
+}
+
+.browse-item .browse-label {
+  flex: 1;
+  min-width: 0;
+  /* Asset paths are long and their tail identifies them, so they wrap rather than being cut. */
+  overflow-wrap: anywhere;
+}
+
+.browse-item .browse-meta {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* A table over the size limit, marked where its size is; still clickable, to read the reason. */
+.browse-item.blocked .browse-label {
+  color: var(--muted);
+}
+
+.browse-item.blocked .browse-meta {
+  color: var(--restricted);
+}
+
+.browse-empty {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+#browse-signin-hint {
+  margin: 0.6rem 0 0;
 }
 
 .load-status {
@@ -329,6 +519,12 @@ img.seg-icon {
 
   .source-seg button:last-child {
     border-bottom: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .browse-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

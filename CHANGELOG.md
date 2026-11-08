@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+#### 🚀 Enhancement
+
+- Added EMBER sign-in to the header and enabled Browse EMBER, which lists public tables and, once signed in, your own embargoed datasets ([#13](https://github.com/brain-bbqs/ember-rave-visualizer/pull/13))
+
 ## 0.1.0
 
 #### 🏠 Internal

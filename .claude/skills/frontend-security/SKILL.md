@@ -30,7 +30,12 @@ Instead:
 ## Other things to keep true
 
 - No third-party `<script>` tags or CDN includes in `index.html`; only this app's own bundled module loads at runtime.
-- Keep runtime dependencies minimal (the template ships with none); a compromised dependency is the other realistic path to a token leaking even without a bug in this app's own code.
+- Keep runtime dependencies minimal (only the shared `@brain-bbqs/*` packages today); a compromised dependency is the other realistic path to a token leaking even without a bug in this app's own code.
 - A user's token goes only to the API that issued it, never forwarded to a companion service; a service that needs a lookup does it with its own server-side key.
+
+## EMBER sign-in
+
+The app signs in to EMBER with Authorization Code + PKCE and keeps the token set in `localStorage` under `ember-rave-visualizer.settings.v1`.
+The token goes only to the archive's API, and is refreshed, revoked and scoped as `SECURITY.md`'s "OAuth token lifecycle" describes; change that section along with any change to how the token is stored or sent.
 
 See `SECURITY.md` for the full reasoning and the precedent from the sibling apps.

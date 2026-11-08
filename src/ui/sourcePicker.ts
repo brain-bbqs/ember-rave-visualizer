@@ -1,28 +1,51 @@
 import type { AppElements } from "./elements";
 
-export type SourcePane = "local" | "url";
+export type SourcePane = "local" | "ember" | "url";
+
+export type SourcePickerElements = Pick<
+  AppElements,
+  | "sourceLocalBtn"
+  | "sourceEmberBtn"
+  | "sourceUrlBtn"
+  | "localSourcePane"
+  | "emberSourcePane"
+  | "urlSourcePane"
+  | "urlForm"
+  | "urlInput"
+>;
+
+export interface SourcePickerHandlers {
+  onRemoteUrl: (url: string) => void;
+  /** Called on every switch, so a pane that costs something to fill can wait until it is shown. */
+  onSelect?: (source: SourcePane) => void;
+}
 
 export interface SourcePicker {
   select(source: SourcePane): void;
 }
 
-export function initSourcePicker(els: AppElements, onRemoteUrl: (url: string) => void): SourcePicker {
+export function initSourcePicker(els: SourcePickerElements, handlers: SourcePickerHandlers): SourcePicker {
+  const sources: [SourcePane, HTMLButtonElement, HTMLElement][] = [
+    ["local", els.sourceLocalBtn, els.localSourcePane],
+    ["ember", els.sourceEmberBtn, els.emberSourcePane],
+    ["url", els.sourceUrlBtn, els.urlSourcePane],
+  ];
+
   function select(source: SourcePane): void {
-    const local = source === "local";
-    els.localSourcePane.hidden = !local;
-    els.urlSourcePane.hidden = local;
-    els.sourceLocalBtn.classList.toggle("active", local);
-    els.sourceUrlBtn.classList.toggle("active", !local);
-    els.sourceLocalBtn.setAttribute("aria-pressed", String(local));
-    els.sourceUrlBtn.setAttribute("aria-pressed", String(!local));
-    if (!local) els.urlInput.focus();
+    for (const [name, button, pane] of sources) {
+      const active = name === source;
+      pane.hidden = !active;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    }
+    if (source === "url") els.urlInput.focus();
+    handlers.onSelect?.(source);
   }
 
-  els.sourceLocalBtn.addEventListener("click", () => select("local"));
-  els.sourceUrlBtn.addEventListener("click", () => select("url"));
+  for (const [name, button] of sources) button.addEventListener("click", () => select(name));
   els.urlForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    onRemoteUrl(els.urlInput.value.trim());
+    handlers.onRemoteUrl(els.urlInput.value.trim());
   });
 
   return { select };

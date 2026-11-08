@@ -2,17 +2,23 @@
 
 ## Live test injections
 
-| URL                            | What it should look like                                            | Try it                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `?test&fake_viewer`            | The default local-file picker above a labelled deterministic viewer | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer)            |
-| `?test&fake_viewer&source_url` | The remote-URL source pane                                          | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&source_url) |
-| `?test&mock_table`             | A fixed, valid two-electrode table shown as loaded                  | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&mock_table)             |
+| URL                                            | What it should look like                                                            | Try it                                                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `?test&fake_viewer`                            | The default local-file picker above a labelled deterministic viewer                 | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer)                            |
+| `?test&fake_viewer&source_url`                 | The remote-URL source pane                                                          | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&source_url)                 |
+| `?test&mock_table`                             | A fixed, valid two-electrode table shown as loaded                                  | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&mock_table)                             |
+| `?test&fake_viewer&source_ember`               | Browse EMBER, reading the real archive                                              | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&source_ember)               |
+| `?test&fake_viewer&remote_listing=7`           | Browse EMBER on a fake listing of 7 tables in 3 datasets (6 when no count is given) | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&remote_listing=7)           |
+| `?test&fake_viewer&signed_in&remote_listing=7` | The same, under a fake account, with the last dataset marked embargoed              | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&signed_in&remote_listing=7) |
+| `?test&fake_viewer&signed_out`                 | Every surface signed out, even over a real stored sign-in                           | [Open](https://brain-bbqs.github.io/ember-rave-visualizer/?test&fake_viewer&signed_out)                 |
 
 `?test` alone is a no-op.
 
 The fake viewer replaces only the large WebGL engine at its adapter boundary, so UI tests stay deterministic while real file validation and rendering state remain unchanged.
 The mock file is named `test-injection-mock-electrodes.tsv` and travels through the same validation and load-state code as a real file.
-No injection writes to browser storage or contacts a remote service.
+The fake listing's tables live under `test-injection.invalid`, so picking one ends in the ordinary download refusal; an embargoed one asks for a real sign-in instead.
+`signed_in` fills the header with a fake account (`test-user`, "Live Smoketest") and holds no token, so it never calls the archive; `signed_out` wins when both are given.
+No injection writes to browser storage, and only `source_ember` contacts a remote service.
 
 ## Local development
 
@@ -20,6 +26,18 @@ No injection writes to browser storage or contacts a remote service.
 npm ci
 npm run dev
 ```
+
+## EMBER sign-in
+
+Sign-in uses this app's own public OAuth application on the EMBER archive (client id in `src/lib/oauth.ts`; Authorization Code grant, public client, no secret, PKCE).
+The app sends the archive back to wherever it is served from (`origin + pathname`), so each location that should be able to sign in has to be listed among that application's redirect URIs:
+
+- `https://brain-bbqs.github.io/ember-rave-visualizer/` for production;
+- `https://brain-bbqs.github.io/ember-rave-visualizer/pr-preview/pr-N/` for a pull request's preview, as needed;
+- `http://localhost:5173/` for `npm run dev`.
+
+Browsing public datasets needs no sign-in at all; signing in adds the embargoed datasets the visitor owns.
+The token lifecycle is in `SECURITY.md`.
 
 ## Updating the vendored viewer
 
