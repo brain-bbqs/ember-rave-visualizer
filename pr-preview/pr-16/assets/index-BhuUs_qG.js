@@ -8,7 +8,7 @@
 
 #### 🚀 Enhancement
 
-- Moved "Remove electrodes" to the load card's top-right corner on tablets and phones in portrait, instead of centred under the source picker ([#16](https://github.com/brain-bbqs/ember-rave-visualizer/pull/16))
+- Renamed "Remove electrodes" to "Reset" and kept it on one line in the load card's top-right corner at every screen size ([#16](https://github.com/brain-bbqs/ember-rave-visualizer/pull/16))
 
 ## 0.2.0
 
