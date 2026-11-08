@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { seedTheme } from "@brain-bbqs/test-utils/playwright";
+import { VIEWPORTS, forEachViewport, seedTheme } from "@brain-bbqs/test-utils/playwright";
 import { THEME_KEY } from "../../src/lib/settings";
 import { dropFile } from "./helpers/drop";
 
@@ -40,6 +40,25 @@ test.describe("EMBER RAVE Visualizer", () => {
     await page.locator("#clear-electrodes-btn").click();
     await expect(status).toBeHidden();
   });
+
+  // The load card's top row stacks at 820px and below (src/style.css).
+  forEachViewport(
+    test,
+    "keeps Remove electrodes in the load card's top-right corner once its top row stacks",
+    async ({ page }) => {
+      await page.goto("/?test&mock_table");
+      await expect(page.locator("#clear-electrodes-btn")).toBeVisible();
+      const row = await page.locator("#load-card .card-toprow").boundingBox();
+      const button = await page.locator("#clear-electrodes-btn").boundingBox();
+      const picker = await page.locator("#source-tabs").boundingBox();
+      if (!row || !button || !picker) throw new Error("The load card's top row is not laid out");
+
+      expect(button.y).toBeCloseTo(row.y, 0);
+      expect(button.x + button.width).toBeCloseTo(row.x + row.width, 0);
+      expect(button.y + button.height).toBeLessThanOrEqual(picker.y);
+    },
+    VIEWPORTS.filter((viewport) => viewport.width <= 820),
+  );
 
   test("rejects a non-table drop before trying to load it", async ({ page }) => {
     await page.goto("/?test&fake_viewer");
