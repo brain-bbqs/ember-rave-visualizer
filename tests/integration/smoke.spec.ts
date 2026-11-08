@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { VIEWPORTS, forEachViewport, seedTheme } from "@brain-bbqs/test-utils/playwright";
+import { forEachViewport, seedTheme } from "@brain-bbqs/test-utils/playwright";
 import { THEME_KEY } from "../../src/lib/settings";
 import { dropFile } from "./helpers/drop";
 
@@ -41,24 +41,25 @@ test.describe("EMBER RAVE Visualizer", () => {
     await expect(status).toBeHidden();
   });
 
-  // The load card's top row stacks at 820px and below (src/style.css).
-  forEachViewport(
-    test,
-    "keeps Remove electrodes in the load card's top-right corner once its top row stacks",
-    async ({ page }) => {
-      await page.goto("/?test&mock_table");
-      await expect(page.locator("#clear-electrodes-btn")).toBeVisible();
-      const row = await page.locator("#load-card .card-toprow").boundingBox();
-      const button = await page.locator("#clear-electrodes-btn").boundingBox();
-      const picker = await page.locator("#source-tabs").boundingBox();
-      if (!row || !button || !picker) throw new Error("The load card's top row is not laid out");
+  forEachViewport(test, "keeps Reset on one line in the load card's top-right corner", async ({ page }) => {
+    await page.goto("/?test&mock_table");
+    const reset = page.locator("#clear-electrodes-btn");
+    await expect(reset).toHaveText("Reset");
+    const row = await page.locator("#load-card .card-toprow").boundingBox();
+    const button = await reset.boundingBox();
+    const picker = await page.locator("#source-tabs").boundingBox();
+    if (!row || !button || !picker) throw new Error("The load card's top row is not laid out");
+    const lines = await reset.evaluate((element) => {
+      const range = element.ownerDocument.createRange();
+      range.selectNodeContents(element);
+      return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+    });
 
-      expect(button.y).toBeCloseTo(row.y, 0);
-      expect(button.x + button.width).toBeCloseTo(row.x + row.width, 0);
-      expect(button.y + button.height).toBeLessThanOrEqual(picker.y);
-    },
-    VIEWPORTS.filter((viewport) => viewport.width <= 820),
-  );
+    expect(button.x + button.width).toBeCloseTo(row.x + row.width, 0);
+    expect(button.y + button.height).toBeLessThanOrEqual(picker.y + picker.height);
+    expect(button.x >= picker.x + picker.width || button.y + button.height <= picker.y).toBe(true);
+    expect(lines).toBe(1);
+  });
 
   test("rejects a non-table drop before trying to load it", async ({ page }) => {
     await page.goto("/?test&fake_viewer");

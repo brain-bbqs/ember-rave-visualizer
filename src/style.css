@@ -54,6 +54,7 @@
 
 .toprow-end {
   justify-self: end;
+  white-space: nowrap;
 }
 
 /* clip-extractor's segmented control, copied as it stands there (see AGENTS.md on siblings). */
@@ -482,8 +483,9 @@ img.seg-icon {
 
 /* The row's slots stack once the picker and the action no longer fit side by side, the picker
    centred as in clip-extractor and the action kept in the card's top-right corner, where it sits at
-   wider sizes; a slot with nothing showing drops out rather than leaving a gap. */
-@media (max-width: 820px) {
+   wider sizes; a slot with nothing showing drops out rather than leaving a gap. "Reset" fits beside
+   the centred picker down to about 680px; the margin above that is for wider system fonts. */
+@media (max-width: 720px) {
   .card-toprow {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
