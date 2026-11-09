@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+#### 🚀 Enhancement
+
+- The viewer's control panel now starts closed, giving the brain the full width of the view ([#PR](https://github.com/brain-bbqs/ember-rave-visualizer/pull/PR))
+
 ## 0.2.1
 
 #### 🚀 Enhancement

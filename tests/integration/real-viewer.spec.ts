@@ -11,11 +11,12 @@ interface ScreenPoint {
 }
 
 interface RaveLayout {
-  controllerGUI: { folders: { _closed: boolean }[] };
+  controllerClosed: boolean;
+  controllerGUI: { _closed: boolean; folders: { _closed: boolean }[] };
   canvas: {
     side_width: number;
     main_canvas: { clientWidth: number };
-    mainCamera: { view: { offsetX: number } | null };
+    mainCamera: { view: { offsetX: number; fullWidth: number } | null };
     compass: { container: { position: { clone(): { project(camera: unknown): ScreenPoint } } } };
   };
 }
@@ -42,18 +43,23 @@ test("loads the real RAVE viewer from its data folder and plots the README examp
       const viewer = (window as unknown as { raveViewerApp: RaveLayout }).raveViewerApp;
       const { canvas } = viewer;
       return {
+        panelClosed: viewer.controllerClosed && viewer.controllerGUI._closed,
         sectionsClosed: viewer.controllerGUI.folders.every((folder) => folder._closed),
         viewShift: canvas.mainCamera.view?.offsetX,
+        framedWidth: canvas.mainCamera.view?.fullWidth,
         halfSidePanel: canvas.side_width / 2,
         canvasWidth: canvas.main_canvas.clientWidth,
         frameWidth: document.documentElement.clientWidth,
         compass: canvas.compass.container.position.clone().project(canvas.mainCamera),
       };
     });
+  expect(layout.panelClosed).toBe(true);
   expect(layout.sectionsClosed).toBe(true);
   expect(layout.viewShift).toBe(-layout.halfSidePanel);
-  // The canvas runs under the control panel, and the compass sits in its bottom-right corner.
+  // The canvas runs under the control panel, which starts closed, so the brain is framed across the
+  // canvas's full width; the compass sits in its bottom-right corner.
   expect(layout.canvasWidth).toBe(layout.frameWidth);
+  expect(layout.framedWidth).toBe(layout.canvasWidth);
   expect(layout.compass.x).toBeGreaterThan(0.8);
   expect(layout.compass.y).toBeLessThan(-0.6);
 

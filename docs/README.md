@@ -56,6 +56,12 @@ node scripts/split-rave-viewer.ts path/to/viewer-export.html
 This rewrites `RAVE_MNI_template.html`, `data/` and `manifest.json`, and applies the widget settings listed in `scripts/raveViewerData.ts`.
 Then set `ORIGINAL_SHA256` in `tests/unit/vendorIntegrity.test.ts` to the new export's digest (`manifest.json` records it), and update the viewer section of `THIRD_PARTY_NOTICES.md`.
 
+To change only those settings, such as the viewer adapter that lays the view out for the frame, edit them in `scripts/raveViewerData.ts` and write them into the page already there:
+
+```bash
+node scripts/reapply-rave-settings.ts
+```
+
 ## Deployment
 
 The production site is deployed from `main` to the `gh-pages` branch by `.github/workflows/deploy.yml`.
