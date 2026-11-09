@@ -12,7 +12,7 @@ function setup() {
   const folders = [{ close: vi.fn() }, { close: vi.fn() }];
   const uploader = { hide: vi.fn() };
   const app = {
-    controllerGUI: { folders, getController: vi.fn(() => uploader) },
+    controllerGUI: { folders, getController: vi.fn(() => uploader), close: vi.fn() },
     controllerClosed: false,
     $wrapper: { clientWidth: FRAME.width, clientHeight: FRAME.height },
     $settingsPanel: { offsetWidth: 300, style: { maxHeight: "" } },
@@ -103,13 +103,14 @@ function setup() {
 }
 
 describe("viewer adapter", () => {
-  it("exposes the app, hides the engine's uploader, collapses every section and announces readiness", () => {
+  it("exposes the app, hides the engine's uploader, closes the control panel and announces readiness", () => {
     const { app, folders, uploader, page, run } = setup();
     run();
     expect(page.raveViewerApp).toBe(app);
     expect(app.controllerGUI.getController).toHaveBeenCalledWith("Dragdrop Uploader");
     expect(uploader.hide).toHaveBeenCalled();
     for (const folder of folders) expect(folder.close).toHaveBeenCalled();
+    expect(app.controllerGUI.close).toHaveBeenCalled();
     expect(page.parent.postMessage).toHaveBeenCalledWith({ type: "ember-rave-viewer-ready" }, ORIGIN);
   });
 

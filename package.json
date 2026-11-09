@@ -1,6 +1,6 @@
 {
   "name": "ember-rave-visualizer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Visualize intracranial electrode coordinates on an interactive RAVE MNI152 template brain.",
   "type": "module",
   "license": "MIT",

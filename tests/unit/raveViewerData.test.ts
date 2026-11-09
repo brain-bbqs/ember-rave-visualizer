@@ -5,6 +5,7 @@ import {
   DISTRIBUTED_SETTINGS,
   joinViewer,
   NO_DROPS,
+  reapplySettings,
   splitViewer,
   storedPath,
   trimConfig,
@@ -118,6 +119,21 @@ describe("splitViewer", () => {
     ],
   ])("rejects %s", (_, html, message) => {
     expect(() => splitViewer(html)).toThrow(message);
+  });
+});
+
+describe("reapplySettings", () => {
+  it("writes the current settings into a split page that carries earlier ones, and nothing else", () => {
+    const stale = SPLIT_HTML.replace(
+      `"custom_javascript":${JSON.stringify(DISTRIBUTED_SETTINGS.custom_javascript)}`,
+      '"custom_javascript":"window.raveViewerApp = app;"',
+    );
+    expect(stale).not.toBe(SPLIT_HTML);
+    expect(reapplySettings(stale)).toBe(SPLIT_HTML);
+  });
+
+  it("refuses a page splitViewer did not produce", () => {
+    expect(() => reapplySettings(EXPORT_HTML)).toThrow("not produced by splitViewer");
   });
 });
 
