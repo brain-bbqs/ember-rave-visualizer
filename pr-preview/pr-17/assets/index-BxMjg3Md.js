@@ -8,7 +8,7 @@
 
 #### 🚀 Enhancement
 
-- The viewer's control panel now starts closed, giving the brain the full width of the view ([#PR](https://github.com/brain-bbqs/ember-rave-visualizer/pull/PR))
+- The viewer's control panel now starts closed, giving the brain the full width of the view ([#17](https://github.com/brain-bbqs/ember-rave-visualizer/pull/17))
 
 ## 0.2.1
 
