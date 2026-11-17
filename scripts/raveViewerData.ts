@@ -87,8 +87,8 @@ export const DERIVED_CONFIG_PREFIX = "ember-";
 export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.json) -->`;
 
 // The engine evaluates this once its data has loaded, with `app` and `canvas` in scope. Besides
-// handing the app to the parent page, it collapses the control panel's sections and lays the view
-// out for the frame:
+// handing the app to the parent page, it starts the control panel closed, with its sections collapsed
+// for when it is opened, and lays the view out for the frame:
 // - The engine narrows its canvas to dock the control panel in a column beside it; the canvas runs
 //   the full width instead, under the panel as it already does under the slice panels, so the
 //   frame's bottom-right corner is part of the view.
@@ -103,6 +103,7 @@ export const DATA_MARKER = `<!-- Template data: ${DATA_FOLDER} (see manifest.jso
 export const VIEWER_ADAPTER = `window.raveViewerApp = app;
 app.controllerGUI.getController('Dragdrop Uploader').hide();
 app.controllerGUI.folders.forEach((folder) => folder.close());
+app.controllerGUI.close();
 if (!canvas.emberCentred) {
   canvas.emberCentred = true;
   const centre = () => {
@@ -463,6 +464,14 @@ export function splitViewer(exportHtml: string, drops: TemplateDrops = NO_DROPS)
     originalSettings,
     trimmedExport: before + keptBlocks.map((block) => block[0]).join("\n") + after,
   };
+}
+
+/** Writes the current {@link DISTRIBUTED_SETTINGS} into a page splitViewer produced, for a change to them that needs no new export. */
+export function reapplySettings(html: string): string {
+  if (!html.includes(DATA_MARKER) || !html.includes(DECOMPRESSION_SHIM)) {
+    throw new Error("This viewer was not produced by splitViewer.");
+  }
+  return replaceSettings(html, DISTRIBUTED_SETTINGS)[0];
 }
 
 export function joinViewer(
