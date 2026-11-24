@@ -23,6 +23,13 @@ The template already builds its tooling on `@brain-bbqs/config`, takes its size 
 Its shell behaviour comes from `@brain-bbqs/ui` too: `initThemeToggle` flips and stores the theme under the app's `THEME_KEY`, `renderVersion` fills the footer's version stamp, `getShellElements`, `getWhatsNewElements` and `required` back the lookups in `src/ui/elements.ts`, `initWhatsNew` renders `CHANGELOG.md` into the What's New modal and opens it from the footer link or at `#changelog`, and `bindDropzone` with `showDropzoneReject` does the dropzone's drag, click and pick plumbing, leaving `src/ui/dropzone.ts` to say what a drop or a pick means.
 The other packages are being adopted app by app in the order `docs/ADOPTION.md` there gives, so a sibling may still carry a local copy of something a package now provides: follow the package, not the copy.
 
+## Skills installed from con/skills
+
+`setup-chromatic` is not kept in this repository: `apm.yml` installs it from [con/skills](https://github.com/con/skills), pinned to a commit in `apm.lock.yaml`.
+Run `apm install --frozen` before starting work to restore it into `.claude/skills/setup-chromatic/` (APM is the `apm-cli` package on PyPI).
+That copy is generated and git-ignored, so a fix to it goes to con/skills as a pull request, and the pin in `apm.yml` then moves to the merged commit.
+Report a failed restore rather than working as if the skill were loaded.
+
 ## When the template is at fault, fix it where it came from
 
 A defect in the shell, a config that is wrong for every app, or guidance that led a setup astray belongs in [`brain-bbqs/web-app-template`](https://github.com/brain-bbqs/web-app-template), so the next app is generated with the fix already in place.

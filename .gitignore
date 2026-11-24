@@ -23,3 +23,9 @@ $RECYCLE.BIN/
 __pycache__/
 *.pyc
 *.pyo
+
+# Skills installed by `apm install --frozen` (see apm.yml); .claude/skills/ also holds this
+# repository's own skills, so only the installed directories are ignored.
+# (`apm_modules/` unanchored: that exact line is what APM looks for before adding its own.)
+apm_modules/
+/.claude/skills/setup-chromatic/
