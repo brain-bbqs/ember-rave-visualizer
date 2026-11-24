@@ -1,0 +1,17 @@
+# Agent skills this repository installs from shared collections, each pinned to a commit.
+# `apm install --frozen` restores them from apm.lock.yaml into .claude/skills/, where the copies are
+# generated and git-ignored: improve a skill in its own repository, then move the pin here.
+name: ember-rave-visualizer
+version: 1.0.0
+description: Agent skills this app installs from shared collections.
+targets:
+  - claude
+dependencies:
+  apm:
+    - git: con/skills
+      ref: 71e788c662d97165881b1dbc733dcd34210d979d
+      skills:
+        - setup-chromatic
+  mcp: []
+includes: auto
+scripts: {}
